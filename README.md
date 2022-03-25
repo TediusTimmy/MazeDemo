@@ -42,7 +42,7 @@ Note: nested cell and fractal are the terms the Daedalus author uses (and I expe
 Giant
 -----
 
-![Program](maze.png)
+![Program](Maze.png)
 
 This simple program solves the trillion-by-trillion maze. After generating the maze with a recursive backtracker, it solves the maze using an A* implementation with a Manhattan metric. The demo will then play through the solution as fast as possible, leaving a rainbow-colored trail. The grey cells are those that the path finding algorithm put on the frontier while solving the maze. I actually did this to see cyan in the solution better, but it looks cool.
 
