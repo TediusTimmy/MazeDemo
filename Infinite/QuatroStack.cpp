@@ -52,6 +52,12 @@ int QuatroStack::get(int depth) const
    return (stack[ptr / 64] >> (ptr % 64)) & 3;
  }
 
+int QuatroStack::seek(int location) const
+ {
+   int ptr = location << 1;
+   return (stack[ptr / 64] >> (ptr % 64)) & 3;
+ }
+
 void QuatroStack::Prev(int direction, int& x, int& y)
  {
    switch (direction)

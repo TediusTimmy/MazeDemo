@@ -27,37 +27,51 @@ OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 SUCH DAMAGE.
 */
 
-#ifndef QUATROSTACK_H
-#define QUATROSTACK_H
+#include <fstream>
 
-#include "Limits.h"
+#include "bmpheader.h"
 
-class QuatroStack
+void MakeBMP2(const Zone& board, const char * name)
  {
-public:
-   uint64_t stack [TWO_BITS]; // Two bits for hypothetical 
-   int sptr;
+   std::ofstream file (name);
+   if (!file)
+      return;
 
-   QuatroStack() : sptr(0) { }
+   int linesize = MAX2 * 3;
 
-   void push(int val);
-   int pop();
+   bmpheader header;
+   header.magic_number() = 0x4D42;
+   header.filesize() = 54 /*base header*/ + linesize * MAX2 /*line size * lines*/;
+   header.reserved1() = 0;
+   header.reserved2() = 0;
+   header.pixel_offset() = 54;
+   header.header_size() = 40;
+   header.width() = MAX2;
+   header.height() = MAX2;
+   header.planes() = 1;
+   header.bpp() = 24;
+   header.compression() = 0;
+   header.img_size() = header.filesize() - header.pixel_offset();
+   header.xscale() = 0;
+   header.yscale() = 0;
+   header.colors() = 0;
+   header.important_colors() = 0;
 
-   int get(int depth) const;
-   int seek(int location) const;
-   static void Prev(int direction, int& x, int& y); // While these functions reek intent,
-   static void Next(int direction, int& x, int& y); // they don't need to be used.
- };
+   file.write(header.header, 54);
 
-class BitZone
- {
-public:
-   uint64_t zone [ONE_BIT];
+   std::unique_ptr<char[]> row = std::make_unique<char[]>(linesize);
+   int byte = 0;
 
-   BitZone();
-
-   void SetBit(size_t x, size_t y);
-   bool GetBit(size_t x, size_t y) const;
- };
-
-#endif /* QUATROSTACK_H */
+   for (int y = MAX2 - 1; y > -1; --y)
+    {
+      byte = 0;
+      std::fill(row.get(), row.get() + linesize, '\0');
+      for (int x = 0; x < MAX2; ++x)
+       {
+         row[byte++] = board.image[y][x].r;
+         row[byte++] = board.image[y][x].g;
+         row[byte++] = board.image[y][x].b;
+       }
+      file.write(row.get(), linesize);
+    }
+ }

@@ -34,7 +34,7 @@ SUCH DAMAGE.
 
 void MetaZone::turtleDown(std::vector<char>& stack) const
  {
-   if ((0 != x) || (0 != y))
+   if ((0 != x) || (0 != y) || (nullptr != turtle.get()))
     {
       stack.push_back(x & 255);
       stack.push_back(x >> 8);
@@ -59,6 +59,18 @@ __uint128_t MakeSeed(uint32_t a, uint32_t b, uint32_t c, __uint128_t d)
    return static_cast<__uint128_t>(Uint128Low64(res)) | ((static_cast<__uint128_t>(Uint128High64(res))) << 64);
  }
 
+__uint128_t MakeSeed(uint32_t a, uint32_t b, uint32_t c, uint32_t d, __uint128_t e)
+ {
+   char string [32];
+   std::memcpy(string, reinterpret_cast<char*>(static_cast<void*>(&a)), 4);
+   std::memcpy(string + 4, reinterpret_cast<char*>(static_cast<void*>(&b)), 4);
+   std::memcpy(string + 8, reinterpret_cast<char*>(static_cast<void*>(&c)), 4);
+   std::memcpy(string + 12, reinterpret_cast<char*>(static_cast<void*>(&d)), 4);
+   std::memcpy(string + 16, reinterpret_cast<char*>(static_cast<void*>(&e)), 16);
+   uint128 res = CityHash128(string, 32);
+   return static_cast<__uint128_t>(Uint128Low64(res)) | ((static_cast<__uint128_t>(Uint128High64(res))) << 64);
+ }
+
 MetaZone::MetaZone(const ZoneDesc& zone, std::shared_ptr<MetaZone> turtle_ptr) : turtle(turtle_ptr)
  {
    x = zone.x;
@@ -80,10 +92,10 @@ MetaZone::MetaZone(const ZoneDesc& zone, std::shared_ptr<MetaZone> turtle_ptr) :
 
    seed = MakeSeed(x, y, d, turtle_hash);
 
-   pcg64 top    (MakeSeed(x, (y - 1) & TOP, y, turtle_hash));
-   pcg64 left   (MakeSeed((x - 1) & TOP, x, y, turtle_hash));
-   pcg64 right  (MakeSeed(x, (x + 1) & TOP, y, turtle_hash));
-   pcg64 bottom (MakeSeed(x, y, (y + 1) & TOP, turtle_hash));
+   pcg64 top    (MakeSeed(x, (y - 1) & TOP, y, d, turtle_hash));
+   pcg64 left   (MakeSeed((x - 1) & TOP, x, y, d, turtle_hash));
+   pcg64 right  (MakeSeed(x, (x + 1) & TOP, y, d, turtle_hash));
+   pcg64 bottom (MakeSeed(x, y, (y + 1) & TOP, d, turtle_hash));
 
    top_c = top() & TOP;
    left_c = left() & TOP;
