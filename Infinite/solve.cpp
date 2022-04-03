@@ -128,3 +128,9 @@ void solve(const ZoneImpl& zone, std::unique_ptr<QuatroStack>& path, std::unique
 
    std::cerr << "Path finding error: no solution from (" << sx << ", " << sy << ") to ("  << fx << ", " << fy << ")" << std::endl;
  }
+
+void solve(const ZoneImpl& zone, std::unique_ptr<QuatroStack>& path, int sx, int sy, int fx, int fy)
+ {
+   std::unique_ptr<BitZone> visited;
+   solve(zone, path, visited, sx, sy, fx, fy);
+ }

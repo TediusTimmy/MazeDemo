@@ -34,6 +34,7 @@ SUCH DAMAGE.
 #include <vector>
 
 #include "Limits.h"
+#include "Uluru.h"
 
 class ZoneDesc
  {
@@ -60,6 +61,7 @@ public:
    __uint128_t turtle_hash;                           // RNG helper
    __uint128_t seed;                                  // The seed
    std::shared_ptr<MetaZone> turtle;                  // If turtle is NULL, implies (0, 0, d + 1)
+   Uluru<MetaZone, ZoneDesc> children;                // LRU cache of sub-mazes at (x, y, d - 1)
 
    MetaZone(const ZoneDesc& zone, std::shared_ptr<MetaZone> turtle_ptr = std::shared_ptr<MetaZone>());
    MetaZone(const MetaZone&) = default;

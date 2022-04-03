@@ -71,7 +71,7 @@ __uint128_t MakeSeed(uint32_t a, uint32_t b, uint32_t c, uint32_t d, __uint128_t
    return static_cast<__uint128_t>(Uint128Low64(res)) | ((static_cast<__uint128_t>(Uint128High64(res))) << 64);
  }
 
-MetaZone::MetaZone(const ZoneDesc& zone, std::shared_ptr<MetaZone> turtle_ptr) : turtle(turtle_ptr)
+MetaZone::MetaZone(const ZoneDesc& zone, std::shared_ptr<MetaZone> turtle_ptr) : turtle(turtle_ptr), children(8U)
  {
    x = zone.x;
    y = zone.y;
