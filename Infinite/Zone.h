@@ -56,7 +56,7 @@ public:
 class MetaZone // A class for building the fine-structure of the maze
  {
 public:
-   uint32_t x, y, d;                                  // Location
+   ZoneDesc desc;                                     // Location
    uint32_t top_c, left_c, right_c, bottom_c;         // Path finding variables
    __uint128_t turtle_hash;                           // RNG helper
    __uint128_t seed;                                  // The seed

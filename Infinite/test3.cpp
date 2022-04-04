@@ -27,6 +27,7 @@ OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 SUCH DAMAGE.
 */
 
+#include <iostream>
 #include <string>
 
 #include "Zone.h"
@@ -105,6 +106,8 @@ int main (void)
             break;
           }
        }
+
+      std::cout << "Equal path for: (0, 0, " << d << ") : " << equal << std::endl;
 
       int x = 1;
       int y = 1;

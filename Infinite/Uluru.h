@@ -64,6 +64,7 @@ public:
    void add(const D& from, const std::shared_ptr<T>& n)
     {
       cache[from].r = std::move(n);
+      cache[from].a = h;
       if (cache.size() > cacheMax)
        {
          typename std::map<D, Ayers<T> >::iterator found = cache.begin();

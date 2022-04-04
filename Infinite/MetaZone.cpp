@@ -34,12 +34,12 @@ SUCH DAMAGE.
 
 void MetaZone::turtleDown(std::vector<char>& stack) const
  {
-   if ((0 != x) || (0 != y) || (nullptr != turtle.get()))
+   if ((0 != desc.x) || (0 != desc.y) || (nullptr != turtle.get()))
     {
-      stack.push_back(x & 255);
-      stack.push_back(x >> 8);
-      stack.push_back(y & 255);
-      stack.push_back(y >> 8);
+      stack.push_back(desc.x & 255);
+      stack.push_back(desc.x >> 8);
+      stack.push_back(desc.y & 255);
+      stack.push_back(desc.y >> 8);
 
       if (nullptr != turtle.get())
        {
@@ -71,12 +71,8 @@ __uint128_t MakeSeed(uint32_t a, uint32_t b, uint32_t c, uint32_t d, __uint128_t
    return static_cast<__uint128_t>(Uint128Low64(res)) | ((static_cast<__uint128_t>(Uint128High64(res))) << 64);
  }
 
-MetaZone::MetaZone(const ZoneDesc& zone, std::shared_ptr<MetaZone> turtle_ptr) : turtle(turtle_ptr), children(8U)
+MetaZone::MetaZone(const ZoneDesc& zone, std::shared_ptr<MetaZone> turtle_ptr) : desc(zone), turtle(turtle_ptr), children(8U)
  {
-   x = zone.x;
-   y = zone.y;
-   d = zone.d;
-
    if (nullptr != turtle.get())
     {
       std::vector<char> temp;
@@ -90,12 +86,12 @@ MetaZone::MetaZone(const ZoneDesc& zone, std::shared_ptr<MetaZone> turtle_ptr) :
       turtle_hash = static_cast<__uint128_t>(Uint128Low64(res)) | ((static_cast<__uint128_t>(Uint128High64(res))) << 64);
     }
 
-   seed = MakeSeed(x, y, d, turtle_hash);
+   seed = MakeSeed(desc.x, desc.y, desc.d, turtle_hash);
 
-   pcg64 top    (MakeSeed(x, (y - 1) & TOP, y, d, turtle_hash));
-   pcg64 left   (MakeSeed((x - 1) & TOP, x, y, d, turtle_hash));
-   pcg64 right  (MakeSeed(x, (x + 1) & TOP, y, d, turtle_hash));
-   pcg64 bottom (MakeSeed(x, y, (y + 1) & TOP, d, turtle_hash));
+   pcg64 top    (MakeSeed(desc.x, (desc.y - 1) & TOP, desc.y, desc.d, turtle_hash));
+   pcg64 left   (MakeSeed((desc.x - 1) & TOP, desc.x, desc.y, desc.d, turtle_hash));
+   pcg64 right  (MakeSeed(desc.x, (desc.x + 1) & TOP, desc.y, desc.d, turtle_hash));
+   pcg64 bottom (MakeSeed(desc.x, desc.y, (desc.y + 1) & TOP, desc.d, turtle_hash));
 
    top_c = top() & TOP;
    left_c = left() & TOP;

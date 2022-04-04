@@ -77,7 +77,7 @@ std::shared_ptr<Zone> convert(const ZoneImpl& from)
 class MazeSolver : public olc::PixelGameEngine
  {
 public:
-   MazeSolver() : cache(16U), cur_zone(0, 0, 0)
+   MazeSolver() : cache(16U), cur_zone(ZoneDesc(0, 0, 0))
     {
       sAppName = "MazeSolver Alpha 2";
     }
@@ -95,10 +95,7 @@ public:
 //      cb = 0;
 //      cm = 0;
 
-      cache.add(cur_zone, convert(*ZoneImpl::create(MetaZone(cur_zone))));
-      cache.add(ZoneDesc(1, 0, 0), convert(*ZoneImpl::create(MetaZone(ZoneDesc(1, 0, 0)))));
-      cache.add(ZoneDesc(0, 1, 0), convert(*ZoneImpl::create(MetaZone(ZoneDesc(0, 1, 0)))));
-      cache.add(ZoneDesc(1, 1, 0), convert(*ZoneImpl::create(MetaZone(ZoneDesc(1, 1, 0)))));
+      cache.add(cur_zone.desc, convert(*ZoneImpl::create(cur_zone)));
 
       return true;
     }
@@ -115,9 +112,10 @@ public:
       if (pos_x < 0)
        {
          pos_x += MAX2;
-         if (0 != cur_zone.x)
+         if (0 != cur_zone.desc.x)
           {
-            --cur_zone.x;
+            cur_zone = MetaZone(ZoneDesc(cur_zone.desc.x - 1, cur_zone.desc.y, cur_zone.desc.d), cur_zone.turtle);
+            cache.add(cur_zone.desc, convert(*ZoneImpl::create(cur_zone)));
           }
          else
           {
@@ -127,9 +125,10 @@ public:
       if (pos_x >= MAX2)
        {
          pos_x -= MAX2;
-         if (0xFFFFFFFF != cur_zone.x)
+         if (0xFFFFFFFF != cur_zone.desc.x)
           {
-            ++cur_zone.x;
+            cur_zone = MetaZone(ZoneDesc(cur_zone.desc.x + 1, cur_zone.desc.y, cur_zone.desc.d), cur_zone.turtle);
+            cache.add(cur_zone.desc, convert(*ZoneImpl::create(cur_zone)));
           }
          else
           {
@@ -139,9 +138,10 @@ public:
       if (pos_y < 0)
        {
          pos_y += MAX2;
-         if (0 != cur_zone.y)
+         if (0 != cur_zone.desc.y)
           {
-            --cur_zone.y;
+            cur_zone = MetaZone(ZoneDesc(cur_zone.desc.x, cur_zone.desc.y - 1, cur_zone.desc.d), cur_zone.turtle);
+            cache.add(cur_zone.desc, convert(*ZoneImpl::create(cur_zone)));
           }
          else
           {
@@ -151,9 +151,10 @@ public:
       if (pos_y >= MAX2)
        {
          pos_y -= MAX2;
-         if (0xFFFFFFFF != cur_zone.y)
+         if (0xFFFFFFFF != cur_zone.desc.y)
           {
-            ++cur_zone.y;
+            cur_zone = MetaZone(ZoneDesc(cur_zone.desc.x, cur_zone.desc.y + 1, cur_zone.desc.d), cur_zone.turtle);
+            cache.add(cur_zone.desc, convert(*ZoneImpl::create(cur_zone)));
           }
          else
           {
@@ -343,8 +344,8 @@ public:
             int ex = scr_x - SCREEN_X / 2 + x;
             int ey = scr_y - SCREEN_Y / 2 + y;
 
-            unsigned int ezx = cur_zone.x;
-            unsigned int ezy = cur_zone.y;
+            unsigned int ezx = cur_zone.desc.x;
+            unsigned int ezy = cur_zone.desc.y;
 
             if ( ((0 == ezx) && (ex < 0)) ||
                  ((0 == ezy) && (ey < 0)) ||
@@ -390,7 +391,7 @@ public:
 
 private:
    Uluru<Zone, ZoneDesc> cache;
-   ZoneDesc cur_zone;//, next_zone;
+   MetaZone cur_zone;
    int pos_x, pos_y, scr_x, scr_y;
    //std::vector<std::pair<int, int> > path;
    //size_t pos_p;
