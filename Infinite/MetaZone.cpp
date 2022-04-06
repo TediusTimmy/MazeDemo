@@ -98,3 +98,37 @@ MetaZone::MetaZone(const ZoneDesc& zone, std::shared_ptr<MetaZone> turtle_ptr) :
    right_c = right() & TOP;
    bottom_c = bottom() & TOP;
  }
+
+bool MetaZone::isOpenUp() const
+ {
+   if ((0 == desc.x) && (0 == desc.y) && (nullptr == turtle.get())) // If we are at the top-left, return false.
+    {
+      return false;
+    }
+
+   if (0 == desc.y)
+    {
+      if (desc.x == turtle->top_c)
+         return turtle->isOpenUp();
+      return false;
+    }
+
+   return false == turtle->realization->impl->GetUp(desc.x, desc.y);
+ }
+
+bool MetaZone::isOpenLeft() const
+ {
+   if ((0 == desc.x) && (0 == desc.y) && (nullptr == turtle.get())) // If we are at the top-left, return false.
+    {
+      return false;
+    }
+
+   if (0 == desc.x)
+    {
+      if (desc.y == turtle->left_c)
+         return turtle->isOpenLeft();
+      return false;
+    }
+
+   return false == turtle->realization->impl->GetLeft(desc.x, desc.y);
+ }

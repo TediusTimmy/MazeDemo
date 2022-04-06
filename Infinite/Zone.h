@@ -54,11 +54,13 @@ public:
  };
 
 class Zone; // Forward declare
+class ZoneImpl;
 
 class ZoneHolder // Use PIMPL to avoid contaminating the code with olc:: namespace stuff.
  {
 public:
-   std::shared_ptr<Zone> zone;
+   std::shared_ptr<ZoneImpl> impl; // We want this for layer 1+
+   std::shared_ptr<Zone> zone;     // And this for layer zero
    ~ZoneHolder();
  };
 
@@ -77,6 +79,14 @@ public:
    MetaZone(const MetaZone&) = default;
    MetaZone& operator= (const MetaZone&) = default;
 
+   bool isOpenUp() const;
+   bool isOpenLeft() const;
+
+   std::shared_ptr<MetaZone> getSiblingUp();
+   std::shared_ptr<MetaZone> getSiblingDown();
+   std::shared_ptr<MetaZone> getSiblingLeft();
+   std::shared_ptr<MetaZone> getSiblingRight();
+
 private:
    void turtleDown(std::vector<char>&) const;
  };
@@ -88,6 +98,7 @@ public:
    uint64_t cell [TWO_BITS];                  // 2 bits per cell with 64 bits in type
 
    static std::shared_ptr<ZoneImpl> create (const MetaZone &zone);
+   static void create (const std::shared_ptr<MetaZone>& zone);
 
    void ClearUp(size_t x, size_t y);
    void ClearLeft(size_t x, size_t y);

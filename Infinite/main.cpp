@@ -99,8 +99,10 @@ public:
 //      cb = 0;
 //      cm = 0;
 
-      cur_zone->realization = std::make_shared<ZoneHolder>();
-      cur_zone->realization->zone = convert(*ZoneImpl::create(*cur_zone));
+      ZoneImpl::create(par_zone);
+      ZoneImpl::create(cur_zone);
+
+      cur_zone->realization->zone = convert(*cur_zone->realization->impl);
       par_zone->children.add(cur_zone->desc, cur_zone);
 
       return true;
@@ -121,8 +123,8 @@ public:
          if (0 != cur_zone->desc.x)
           {
             cur_zone = std::make_shared<MetaZone>(ZoneDesc(cur_zone->desc.x - 1, cur_zone->desc.y, cur_zone->desc.d), cur_zone->turtle);
-            cur_zone->realization = std::make_shared<ZoneHolder>();
-            cur_zone->realization->zone = convert(*ZoneImpl::create(*cur_zone));
+            ZoneImpl::create(cur_zone);
+            cur_zone->realization->zone = convert(*cur_zone->realization->impl);
             par_zone->children.add(cur_zone->desc, cur_zone);
           }
          else
@@ -136,8 +138,8 @@ public:
          if (0xFFFFFFFF != cur_zone->desc.x)
           {
             cur_zone = std::make_shared<MetaZone>(ZoneDesc(cur_zone->desc.x + 1, cur_zone->desc.y, cur_zone->desc.d), cur_zone->turtle);
-            cur_zone->realization = std::make_shared<ZoneHolder>();
-            cur_zone->realization->zone = convert(*ZoneImpl::create(*cur_zone));
+            ZoneImpl::create(cur_zone);
+            cur_zone->realization->zone = convert(*cur_zone->realization->impl);
             par_zone->children.add(cur_zone->desc, cur_zone);
           }
          else
@@ -151,8 +153,8 @@ public:
          if (0 != cur_zone->desc.y)
           {
             cur_zone = std::make_shared<MetaZone>(ZoneDesc(cur_zone->desc.x, cur_zone->desc.y - 1, cur_zone->desc.d), cur_zone->turtle);
-            cur_zone->realization = std::make_shared<ZoneHolder>();
-            cur_zone->realization->zone = convert(*ZoneImpl::create(*cur_zone));
+            ZoneImpl::create(cur_zone);
+            cur_zone->realization->zone = convert(*cur_zone->realization->impl);
             par_zone->children.add(cur_zone->desc, cur_zone);
           }
          else
@@ -166,8 +168,8 @@ public:
          if (0xFFFFFFFF != cur_zone->desc.y)
           {
             cur_zone = std::make_shared<MetaZone>(ZoneDesc(cur_zone->desc.x, cur_zone->desc.y + 1, cur_zone->desc.d), cur_zone->turtle);
-            cur_zone->realization = std::make_shared<ZoneHolder>();
-            cur_zone->realization->zone = convert(*ZoneImpl::create(*cur_zone));
+            ZoneImpl::create(cur_zone);
+            cur_zone->realization->zone = convert(*cur_zone->realization->impl);
             par_zone->children.add(cur_zone->desc, cur_zone);
           }
          else
