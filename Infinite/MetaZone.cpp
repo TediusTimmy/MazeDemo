@@ -113,7 +113,7 @@ bool MetaZone::isOpenUp() const
       return false;
     }
 
-   return false == turtle->realization->impl->GetUp(desc.x, desc.y);
+   return false == turtle->impl->GetUp(desc.x, desc.y);
  }
 
 bool MetaZone::isOpenLeft() const
@@ -130,5 +130,5 @@ bool MetaZone::isOpenLeft() const
       return false;
     }
 
-   return false == turtle->realization->impl->GetLeft(desc.x, desc.y);
+   return false == turtle->impl->GetLeft(desc.x, desc.y);
  }

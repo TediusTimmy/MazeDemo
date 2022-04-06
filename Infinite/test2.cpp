@@ -54,10 +54,6 @@ public:
    Zone& operator= (const Zone&) = default;
  };
 
-ZoneHolder::~ZoneHolder()
- {
- }
-
 class Path
  {
 public:

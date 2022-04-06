@@ -121,10 +121,9 @@ std::shared_ptr<ZoneImpl> ZoneImpl::create(const MetaZone &zone)
 
 void ZoneImpl::create(const std::shared_ptr<MetaZone> &zone)
  {
-   zone->realization = std::make_shared<ZoneHolder>();
-   zone->realization->impl = create(*zone);
+   zone->impl = create(*zone);
    if (true == zone->isOpenUp())
-      zone->realization->impl->ClearUp(zone->top_c, 0);
+      zone->impl->ClearUp(zone->top_c, 0);
    if (true == zone->isOpenLeft())
-      zone->realization->impl->ClearLeft(0, zone->left_c);
+      zone->impl->ClearLeft(0, zone->left_c);
  }

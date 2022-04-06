@@ -53,10 +53,6 @@ public:
    Zone& operator= (const Zone&) = default;
  };
 
-ZoneHolder::~ZoneHolder()
- {
- }
-
 std::shared_ptr<Zone> convert(const ZoneImpl& from)
  {
    std::shared_ptr<Zone> ret = std::make_shared<Zone>();
@@ -102,7 +98,7 @@ public:
       ZoneImpl::create(par_zone);
       ZoneImpl::create(cur_zone);
 
-      cur_zone->realization->zone = convert(*cur_zone->realization->impl);
+      cur_zone->realization = convert(*cur_zone->impl);
       par_zone->children.add(cur_zone->desc, cur_zone);
 
       return true;
@@ -124,7 +120,7 @@ public:
           {
             cur_zone = std::make_shared<MetaZone>(ZoneDesc(cur_zone->desc.x - 1, cur_zone->desc.y, cur_zone->desc.d), cur_zone->turtle);
             ZoneImpl::create(cur_zone);
-            cur_zone->realization->zone = convert(*cur_zone->realization->impl);
+            cur_zone->realization = convert(*cur_zone->impl);
             par_zone->children.add(cur_zone->desc, cur_zone);
           }
          else
@@ -139,7 +135,7 @@ public:
           {
             cur_zone = std::make_shared<MetaZone>(ZoneDesc(cur_zone->desc.x + 1, cur_zone->desc.y, cur_zone->desc.d), cur_zone->turtle);
             ZoneImpl::create(cur_zone);
-            cur_zone->realization->zone = convert(*cur_zone->realization->impl);
+            cur_zone->realization = convert(*cur_zone->impl);
             par_zone->children.add(cur_zone->desc, cur_zone);
           }
          else
@@ -154,7 +150,7 @@ public:
           {
             cur_zone = std::make_shared<MetaZone>(ZoneDesc(cur_zone->desc.x, cur_zone->desc.y - 1, cur_zone->desc.d), cur_zone->turtle);
             ZoneImpl::create(cur_zone);
-            cur_zone->realization->zone = convert(*cur_zone->realization->impl);
+            cur_zone->realization = convert(*cur_zone->impl);
             par_zone->children.add(cur_zone->desc, cur_zone);
           }
          else
@@ -169,7 +165,7 @@ public:
           {
             cur_zone = std::make_shared<MetaZone>(ZoneDesc(cur_zone->desc.x, cur_zone->desc.y + 1, cur_zone->desc.d), cur_zone->turtle);
             ZoneImpl::create(cur_zone);
-            cur_zone->realization->zone = convert(*cur_zone->realization->impl);
+            cur_zone->realization = convert(*cur_zone->impl);
             par_zone->children.add(cur_zone->desc, cur_zone);
           }
          else
@@ -394,8 +390,8 @@ public:
                 }
 
                std::shared_ptr<MetaZone> zone = par_zone->children.get(ZoneDesc(ezx, ezy, 0));
-               if ((nullptr != zone.get()) && (nullptr != zone->realization.get()) && (nullptr != zone->realization->zone.get()))
-                  Draw(x, y, zone->realization->zone->image[ey][ex]);
+               if ((nullptr != zone.get()) && (nullptr != zone->realization.get()))
+                  Draw(x, y, zone->realization->image[ey][ex]);
                else // This needs to go away, as it is an error case.
                   Draw(x, y, olc::Pixel(0, 0, 0));
              }

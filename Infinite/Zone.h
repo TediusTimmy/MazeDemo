@@ -56,14 +56,6 @@ public:
 class Zone; // Forward declare
 class ZoneImpl;
 
-class ZoneHolder // Use PIMPL to avoid contaminating the code with olc:: namespace stuff.
- {
-public:
-   std::shared_ptr<ZoneImpl> impl; // We want this for layer 1+
-   std::shared_ptr<Zone> zone;     // And this for layer zero
-   ~ZoneHolder();
- };
-
 class MetaZone // A class for building the fine-structure of the maze
  {
 public:
@@ -73,7 +65,8 @@ public:
    __uint128_t seed;                                  // The seed
    std::shared_ptr<MetaZone> turtle;                  // If turtle is NULL, implies (0, 0, d + 1)
    Uluru<MetaZone, ZoneDesc> children;                // LRU cache of sub-mazes at (x, y, d - 1)
-   std::shared_ptr<ZoneHolder> realization;           // The picture of the zone
+   std::shared_ptr<Zone> realization;                 // The picture of the zone
+   std::shared_ptr<ZoneImpl> impl;                    // We want this for layer 1+
 
    MetaZone(const ZoneDesc& zone, std::shared_ptr<MetaZone> turtle_ptr = std::shared_ptr<MetaZone>());
    MetaZone(const MetaZone&) = default;

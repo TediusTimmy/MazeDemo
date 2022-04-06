@@ -31,14 +31,6 @@ SUCH DAMAGE.
 
 #include "Zone.h"
 
-class Zone
- {
- };
-
-ZoneHolder::~ZoneHolder()
- {
- }
-
 int main (void)
  {
    for (int x = 1; x < 33; ++x)
