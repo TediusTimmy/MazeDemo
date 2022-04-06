@@ -54,6 +54,10 @@ public:
    Zone& operator= (const Zone&) = default;
  };
 
+ZoneHolder::~ZoneHolder()
+ {
+ }
+
 std::unique_ptr<Zone> convert(const ZoneImpl& from)
  {
    std::unique_ptr<Zone> ret = std::make_unique<Zone>();

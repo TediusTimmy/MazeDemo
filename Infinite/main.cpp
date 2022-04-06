@@ -53,6 +53,10 @@ public:
    Zone& operator= (const Zone&) = default;
  };
 
+ZoneHolder::~ZoneHolder()
+ {
+ }
+
 std::shared_ptr<Zone> convert(const ZoneImpl& from)
  {
    std::shared_ptr<Zone> ret = std::make_shared<Zone>();
@@ -77,7 +81,7 @@ std::shared_ptr<Zone> convert(const ZoneImpl& from)
 class MazeSolver : public olc::PixelGameEngine
  {
 public:
-   MazeSolver() : cache(16U), cur_zone(ZoneDesc(0, 0, 0))
+   MazeSolver() : par_zone(std::make_shared<MetaZone>(ZoneDesc(0, 0, 1))), cur_zone(std::make_shared<MetaZone>(ZoneDesc(0, 0, 0), par_zone))
     {
       sAppName = "MazeSolver Alpha 2";
     }
@@ -95,7 +99,9 @@ public:
 //      cb = 0;
 //      cm = 0;
 
-      cache.add(cur_zone.desc, convert(*ZoneImpl::create(cur_zone)));
+      cur_zone->realization = std::make_shared<ZoneHolder>();
+      cur_zone->realization->zone = convert(*ZoneImpl::create(*cur_zone));
+      par_zone->children.add(cur_zone->desc, cur_zone);
 
       return true;
     }
@@ -112,10 +118,12 @@ public:
       if (pos_x < 0)
        {
          pos_x += MAX2;
-         if (0 != cur_zone.desc.x)
+         if (0 != cur_zone->desc.x)
           {
-            cur_zone = MetaZone(ZoneDesc(cur_zone.desc.x - 1, cur_zone.desc.y, cur_zone.desc.d), cur_zone.turtle);
-            cache.add(cur_zone.desc, convert(*ZoneImpl::create(cur_zone)));
+            cur_zone = std::make_shared<MetaZone>(ZoneDesc(cur_zone->desc.x - 1, cur_zone->desc.y, cur_zone->desc.d), cur_zone->turtle);
+            cur_zone->realization = std::make_shared<ZoneHolder>();
+            cur_zone->realization->zone = convert(*ZoneImpl::create(*cur_zone));
+            par_zone->children.add(cur_zone->desc, cur_zone);
           }
          else
           {
@@ -125,10 +133,12 @@ public:
       if (pos_x >= MAX2)
        {
          pos_x -= MAX2;
-         if (0xFFFFFFFF != cur_zone.desc.x)
+         if (0xFFFFFFFF != cur_zone->desc.x)
           {
-            cur_zone = MetaZone(ZoneDesc(cur_zone.desc.x + 1, cur_zone.desc.y, cur_zone.desc.d), cur_zone.turtle);
-            cache.add(cur_zone.desc, convert(*ZoneImpl::create(cur_zone)));
+            cur_zone = std::make_shared<MetaZone>(ZoneDesc(cur_zone->desc.x + 1, cur_zone->desc.y, cur_zone->desc.d), cur_zone->turtle);
+            cur_zone->realization = std::make_shared<ZoneHolder>();
+            cur_zone->realization->zone = convert(*ZoneImpl::create(*cur_zone));
+            par_zone->children.add(cur_zone->desc, cur_zone);
           }
          else
           {
@@ -138,10 +148,12 @@ public:
       if (pos_y < 0)
        {
          pos_y += MAX2;
-         if (0 != cur_zone.desc.y)
+         if (0 != cur_zone->desc.y)
           {
-            cur_zone = MetaZone(ZoneDesc(cur_zone.desc.x, cur_zone.desc.y - 1, cur_zone.desc.d), cur_zone.turtle);
-            cache.add(cur_zone.desc, convert(*ZoneImpl::create(cur_zone)));
+            cur_zone = std::make_shared<MetaZone>(ZoneDesc(cur_zone->desc.x, cur_zone->desc.y - 1, cur_zone->desc.d), cur_zone->turtle);
+            cur_zone->realization = std::make_shared<ZoneHolder>();
+            cur_zone->realization->zone = convert(*ZoneImpl::create(*cur_zone));
+            par_zone->children.add(cur_zone->desc, cur_zone);
           }
          else
           {
@@ -151,10 +163,12 @@ public:
       if (pos_y >= MAX2)
        {
          pos_y -= MAX2;
-         if (0xFFFFFFFF != cur_zone.desc.y)
+         if (0xFFFFFFFF != cur_zone->desc.y)
           {
-            cur_zone = MetaZone(ZoneDesc(cur_zone.desc.x, cur_zone.desc.y + 1, cur_zone.desc.d), cur_zone.turtle);
-            cache.add(cur_zone.desc, convert(*ZoneImpl::create(cur_zone)));
+            cur_zone = std::make_shared<MetaZone>(ZoneDesc(cur_zone->desc.x, cur_zone->desc.y + 1, cur_zone->desc.d), cur_zone->turtle);
+            cur_zone->realization = std::make_shared<ZoneHolder>();
+            cur_zone->realization->zone = convert(*ZoneImpl::create(*cur_zone));
+            par_zone->children.add(cur_zone->desc, cur_zone);
           }
          else
           {
@@ -344,8 +358,8 @@ public:
             int ex = scr_x - SCREEN_X / 2 + x;
             int ey = scr_y - SCREEN_Y / 2 + y;
 
-            unsigned int ezx = cur_zone.desc.x;
-            unsigned int ezy = cur_zone.desc.y;
+            unsigned int ezx = cur_zone->desc.x;
+            unsigned int ezy = cur_zone->desc.y;
 
             if ( ((0 == ezx) && (ex < 0)) ||
                  ((0 == ezy) && (ey < 0)) ||
@@ -377,9 +391,9 @@ public:
                   ey -= MAX2;
                 }
 
-               std::shared_ptr<Zone> zone = cache.get(ZoneDesc(ezx, ezy, 0));
-               if (nullptr != zone.get())
-                  Draw(x, y, zone->image[ey][ex]);
+               std::shared_ptr<MetaZone> zone = par_zone->children.get(ZoneDesc(ezx, ezy, 0));
+               if ((nullptr != zone.get()) && (nullptr != zone->realization.get()) && (nullptr != zone->realization->zone.get()))
+                  Draw(x, y, zone->realization->zone->image[ey][ex]);
                else // This needs to go away, as it is an error case.
                   Draw(x, y, olc::Pixel(0, 0, 0));
              }
@@ -390,8 +404,7 @@ public:
     }
 
 private:
-   Uluru<Zone, ZoneDesc> cache;
-   MetaZone cur_zone;
+   std::shared_ptr<MetaZone> par_zone, cur_zone;
    int pos_x, pos_y, scr_x, scr_y;
    //std::vector<std::pair<int, int> > path;
    //size_t pos_p;
