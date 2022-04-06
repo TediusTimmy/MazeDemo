@@ -77,7 +77,7 @@ std::shared_ptr<Zone> convert(const ZoneImpl& from)
 class MazeSolver : public olc::PixelGameEngine
  {
 public:
-   MazeSolver() : par_zone(std::make_shared<MetaZone>(ZoneDesc(0, 0, 1))), cur_zone(std::make_shared<MetaZone>(ZoneDesc(0, 0, 0), par_zone))
+   MazeSolver() : cur_zone(std::make_shared<MetaZone>(ZoneDesc(0, 0, 0), std::make_shared<MetaZone>(ZoneDesc(0, 0, 1))))
     {
       sAppName = "MazeSolver Alpha 2";
     }
@@ -95,11 +95,9 @@ public:
 //      cb = 0;
 //      cm = 0;
 
-      ZoneImpl::create(par_zone);
+      ZoneImpl::create(cur_zone->turtle);
       ZoneImpl::create(cur_zone);
-
-      cur_zone->realization = convert(*cur_zone->impl);
-      par_zone->children.add(cur_zone->desc, cur_zone);
+      cur_zone->turtle->children.add(cur_zone->desc, cur_zone);
 
       return true;
     }
@@ -116,12 +114,10 @@ public:
       if (pos_x < 0)
        {
          pos_x += MAX2;
-         if (0 != cur_zone->desc.x)
+         std::shared_ptr<MetaZone> temp = cur_zone->getSiblingLeft();
+         if (nullptr != temp.get())
           {
-            cur_zone = std::make_shared<MetaZone>(ZoneDesc(cur_zone->desc.x - 1, cur_zone->desc.y, cur_zone->desc.d), cur_zone->turtle);
-            ZoneImpl::create(cur_zone);
-            cur_zone->realization = convert(*cur_zone->impl);
-            par_zone->children.add(cur_zone->desc, cur_zone);
+            cur_zone = temp;
           }
          else
           {
@@ -131,12 +127,10 @@ public:
       if (pos_x >= MAX2)
        {
          pos_x -= MAX2;
-         if (0xFFFFFFFF != cur_zone->desc.x)
+         std::shared_ptr<MetaZone> temp = cur_zone->getSiblingRight();
+         if (nullptr != temp.get())
           {
-            cur_zone = std::make_shared<MetaZone>(ZoneDesc(cur_zone->desc.x + 1, cur_zone->desc.y, cur_zone->desc.d), cur_zone->turtle);
-            ZoneImpl::create(cur_zone);
-            cur_zone->realization = convert(*cur_zone->impl);
-            par_zone->children.add(cur_zone->desc, cur_zone);
+            cur_zone = temp;
           }
          else
           {
@@ -146,12 +140,10 @@ public:
       if (pos_y < 0)
        {
          pos_y += MAX2;
-         if (0 != cur_zone->desc.y)
+         std::shared_ptr<MetaZone> temp = cur_zone->getSiblingUp();
+         if (nullptr != temp.get())
           {
-            cur_zone = std::make_shared<MetaZone>(ZoneDesc(cur_zone->desc.x, cur_zone->desc.y - 1, cur_zone->desc.d), cur_zone->turtle);
-            ZoneImpl::create(cur_zone);
-            cur_zone->realization = convert(*cur_zone->impl);
-            par_zone->children.add(cur_zone->desc, cur_zone);
+            cur_zone = temp;
           }
          else
           {
@@ -161,12 +153,10 @@ public:
       if (pos_y >= MAX2)
        {
          pos_y -= MAX2;
-         if (0xFFFFFFFF != cur_zone->desc.y)
+         std::shared_ptr<MetaZone> temp = cur_zone->getSiblingDown();
+         if (nullptr != temp.get())
           {
-            cur_zone = std::make_shared<MetaZone>(ZoneDesc(cur_zone->desc.x, cur_zone->desc.y + 1, cur_zone->desc.d), cur_zone->turtle);
-            ZoneImpl::create(cur_zone);
-            cur_zone->realization = convert(*cur_zone->impl);
-            par_zone->children.add(cur_zone->desc, cur_zone);
+            cur_zone = temp;
           }
          else
           {
@@ -356,45 +346,42 @@ public:
             int ex = scr_x - SCREEN_X / 2 + x;
             int ey = scr_y - SCREEN_Y / 2 + y;
 
-            unsigned int ezx = cur_zone->desc.x;
-            unsigned int ezy = cur_zone->desc.y;
+            std::shared_ptr<MetaZone> temp = cur_zone;
 
-            if ( ((0 == ezx) && (ex < 0)) ||
-                 ((0 == ezy) && (ey < 0)) ||
-                 ((0xFFFFFFFF == ezx) && (ex >= MAX2)) ||
-                 ((0xFFFFFFFF == ezy) && (ey >= MAX2)) )
+            while (ex < 0)
              {
-               Draw(x, y, olc::Pixel(0, 0, 0));
+               if (nullptr != temp.get())
+                  temp = temp->getSiblingLeft();
+               ex += MAX2;
+             }
+            while (ex >= MAX2)
+             {
+               if (nullptr != temp.get())
+                  temp = temp->getSiblingRight();
+               ex -= MAX2;
+             }
+            while (ey < 0)
+             {
+               if (nullptr != temp.get())
+                  temp = temp->getSiblingUp();
+               ey += MAX2;
+             }
+            while (ey >= MAX2)
+             {
+               if (nullptr != temp.get())
+                  temp = temp->getSiblingDown();
+               ey -= MAX2;
+             }
+
+            if (nullptr != temp.get())
+             {
+               if (nullptr == temp->realization.get())
+                  temp->realization = convert(*temp->impl);
+
+               Draw(x, y, temp->realization->image[ey][ex]);
              }
             else
-             {
-               if (ex < 0)
-                {
-                  --ezx;
-                  ex += MAX2;
-                }
-               if (ex >= MAX2)
-                {
-                  ++ezx;
-                  ex -= MAX2;
-                }
-               if (ey < 0)
-                {
-                  --ezy;
-                  ey += MAX2;
-                }
-               if (ey >= MAX2)
-                {
-                  ++ezy;
-                  ey -= MAX2;
-                }
-
-               std::shared_ptr<MetaZone> zone = par_zone->children.get(ZoneDesc(ezx, ezy, 0));
-               if ((nullptr != zone.get()) && (nullptr != zone->realization.get()))
-                  Draw(x, y, zone->realization->image[ey][ex]);
-               else // This needs to go away, as it is an error case.
-                  Draw(x, y, olc::Pixel(0, 0, 0));
-             }
+               Draw(x, y, olc::Pixel(0, 0, 0));
           }
        }
 
@@ -402,7 +389,7 @@ public:
     }
 
 private:
-   std::shared_ptr<MetaZone> par_zone, cur_zone;
+   std::shared_ptr<MetaZone> cur_zone;
    int pos_x, pos_y, scr_x, scr_y;
    //std::vector<std::pair<int, int> > path;
    //size_t pos_p;

@@ -132,3 +132,171 @@ bool MetaZone::isOpenLeft() const
 
    return false == turtle->impl->GetLeft(desc.x, desc.y);
  }
+
+std::shared_ptr<MetaZone> MetaZone::getSiblingUp()
+ {
+   if (desc.y > 0) // Base case : lookup in parent
+    {
+      if (nullptr == turtle.get()) // If my parent doesn't exist, create them
+       {
+         turtle = std::make_shared<MetaZone>(ZoneDesc(0, 0, desc.d + 1)); // Parent not existing implies (x, y) is (0, 0)
+         ZoneImpl::create(turtle);
+       }
+
+      std::shared_ptr<MetaZone> temp = turtle->children.get(ZoneDesc(desc.x, desc.y - 1, desc.d)); // Lookup sibling in parent
+
+      if (nullptr == temp.get()) // If my sibling doesn't exist, create them
+       {
+         temp = std::make_shared<MetaZone>(ZoneDesc(desc.x, desc.y - 1, desc.d), turtle);
+         ZoneImpl::create(temp);
+         turtle->children.add(temp->desc, temp);
+       }
+
+      return temp;
+    }
+
+   // Now, for looking in the zone above. Recurse down as far as needed to do so
+   if (nullptr == turtle) // If I don't have a parent, then I'm in the top-left and there is no up
+      return turtle;
+
+   std::shared_ptr<MetaZone> temp_par = turtle->getSiblingUp(); // Get my parent's up sibling
+   if (nullptr == temp_par) // Stop if it doesn't have one
+      return temp_par;
+
+   std::shared_ptr<MetaZone> temp = temp_par->children.get(ZoneDesc(desc.x, TOP, desc.d)); // Lookup cousin
+
+   if (nullptr == temp.get()) // If my cousin doesn't exist, create them
+    {
+      temp = std::make_shared<MetaZone>(ZoneDesc(desc.x, TOP, desc.d), temp_par);
+      ZoneImpl::create(temp);
+      temp_par->children.add(temp->desc, temp);
+    }
+
+   return temp;
+ }
+
+std::shared_ptr<MetaZone> MetaZone::getSiblingDown()
+ {
+   if (desc.y < TOP) // Base case : lookup in parent
+    {
+      if (nullptr == turtle.get()) // If my parent doesn't exist, create them
+       {
+         turtle = std::make_shared<MetaZone>(ZoneDesc(0, 0, desc.d + 1)); // Parent not existing implies (x, y) is (0, 0)
+         ZoneImpl::create(turtle);
+       }
+
+      std::shared_ptr<MetaZone> temp = turtle->children.get(ZoneDesc(desc.x, desc.y + 1, desc.d)); // Lookup sibling in parent
+
+      if (nullptr == temp.get()) // If my sibling doesn't exist, create them
+       {
+         temp = std::make_shared<MetaZone>(ZoneDesc(desc.x, desc.y + 1, desc.d), turtle);
+         ZoneImpl::create(temp);
+         turtle->children.add(temp->desc, temp);
+       }
+
+      return temp;
+    }
+
+   // Now, for looking in the zone below. Recurse down as far as needed to do so
+   if (nullptr == turtle) // If my parent doesn't exist, create them
+    {
+      turtle = std::make_shared<MetaZone>(ZoneDesc(0, 0, desc.d + 1)); // Parent not existing implies (x, y) is (0, 0)
+      ZoneImpl::create(turtle);
+    }
+
+   std::shared_ptr<MetaZone> temp_par = turtle->getSiblingDown(); // Get my parent's down sibling : it MUST have a down sibling
+   std::shared_ptr<MetaZone> temp = temp_par->children.get(ZoneDesc(desc.x, 0, desc.d)); // Lookup cousin
+
+   if (nullptr == temp.get()) // If my cousin doesn't exist, create them
+    {
+      temp = std::make_shared<MetaZone>(ZoneDesc(desc.x, 0, desc.d), temp_par);
+      ZoneImpl::create(temp);
+      temp_par->children.add(temp->desc, temp);
+    }
+
+   return temp;
+ }
+
+std::shared_ptr<MetaZone> MetaZone::getSiblingLeft()
+ {
+   if (desc.x > 0) // Base case : lookup in parent
+    {
+      if (nullptr == turtle.get()) // If my parent doesn't exist, create them
+       {
+         turtle = std::make_shared<MetaZone>(ZoneDesc(0, 0, desc.d + 1)); // Parent not existing implies (x, y) is (0, 0)
+         ZoneImpl::create(turtle);
+       }
+
+      std::shared_ptr<MetaZone> temp = turtle->children.get(ZoneDesc(desc.x - 1, desc.y, desc.d)); // Lookup sibling in parent
+
+      if (nullptr == temp.get()) // If my sibling doesn't exist, create them
+       {
+         temp = std::make_shared<MetaZone>(ZoneDesc(desc.x - 1, desc.y, desc.d), turtle);
+         ZoneImpl::create(temp);
+         turtle->children.add(temp->desc, temp);
+       }
+
+      return temp;
+    }
+
+   // Now, for looking in the zone left. Recurse down as far as needed to do so
+   if (nullptr == turtle) // If I don't have a parent, then I'm in the top-left and there is no left
+      return turtle;
+
+   std::shared_ptr<MetaZone> temp_par = turtle->getSiblingLeft(); // Get my parent's left sibling
+   if (nullptr == temp_par) // Stop if it doesn't have one
+      return temp_par;
+
+   std::shared_ptr<MetaZone> temp = temp_par->children.get(ZoneDesc(TOP, desc.y, desc.d)); // Lookup cousin
+
+   if (nullptr == temp.get()) // If my cousin doesn't exist, create them
+    {
+      temp = std::make_shared<MetaZone>(ZoneDesc(TOP, desc.y, desc.d), temp_par);
+      ZoneImpl::create(temp);
+      temp_par->children.add(temp->desc, temp);
+    }
+
+   return temp;
+ }
+
+std::shared_ptr<MetaZone> MetaZone::getSiblingRight()
+ {
+   if (desc.x < TOP) // Base case : lookup in parent
+    {
+      if (nullptr == turtle.get()) // If my parent doesn't exist, create them
+       {
+         turtle = std::make_shared<MetaZone>(ZoneDesc(0, 0, desc.d + 1)); // Parent not existing implies (x, y) is (0, 0)
+         ZoneImpl::create(turtle);
+       }
+
+      std::shared_ptr<MetaZone> temp = turtle->children.get(ZoneDesc(desc.x + 1, desc.y, desc.d)); // Lookup sibling in parent
+
+      if (nullptr == temp.get()) // If my sibling doesn't exist, create them
+       {
+         temp = std::make_shared<MetaZone>(ZoneDesc(desc.x + 1, desc.y, desc.d), turtle);
+         ZoneImpl::create(temp);
+         turtle->children.add(temp->desc, temp);
+       }
+
+      return temp;
+    }
+
+   // Now, for looking in the zone right. Recurse down as far as needed to do so
+   if (nullptr == turtle) // If my parent doesn't exist, create them
+    {
+      turtle = std::make_shared<MetaZone>(ZoneDesc(0, 0, desc.d + 1)); // Parent not existing implies (x, y) is (0, 0)
+      ZoneImpl::create(turtle);
+    }
+
+   std::shared_ptr<MetaZone> temp_par = turtle->getSiblingRight(); // Get my parent's right sibling : it MUST have a right sibling
+   std::shared_ptr<MetaZone> temp = temp_par->children.get(ZoneDesc(0, desc.y, desc.d)); // Lookup cousin
+
+   if (nullptr == temp.get()) // If my cousin doesn't exist, create them
+    {
+      temp = std::make_shared<MetaZone>(ZoneDesc(0, desc.y, desc.d), temp_par);
+      ZoneImpl::create(temp);
+      temp_par->children.add(temp->desc, temp);
+    }
+
+   return temp;
+ }
