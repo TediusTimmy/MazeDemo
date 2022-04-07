@@ -77,6 +77,16 @@ std::shared_ptr<Zone> convert(const ZoneImpl& from)
 
 void solve(const ZoneImpl& zone, std::unique_ptr<QuatroStack>& path, int sx, int sy, int fx, int fy);
 
+ // 1 : We weren't at the zone's designated exit when leaving.
+ // 2 : We weren't at the far side of the zone when leaving.
+ // 3 : The exit of the old zone wasn't the entrance of the new zone.
+ // 4 : The side we went through wasn't open.
+void pathError(int level) __attribute__((noinline)); // GCC, why are you so stupid?
+void pathError(int level)
+ {
+   std::cerr << "Error in pathfinding " << level << "." << std::endl;
+ }
+
 class MazeSolver : public olc::PixelGameEngine
  {
 public:
@@ -190,37 +200,45 @@ public:
             case 0: // We went left
                sx = TOP;
                sy = cur_zone->left_c;
-               if (static_cast<uint32_t>(pos_y) != (2 * cur_zone->left_c + 1)) std::cerr << "Error in pathfinding 1." << std::endl;
-               if (0 != pos_x) std::cerr << "Error in pathfinding 2." << std::endl;
+               if (static_cast<uint32_t>(pos_y) != (2 * cur_zone->left_c + 1)) pathError(1);
+               if (0 != pos_x) pathError(2);
+               if (false == cur_zone->isOpenLeft()) pathError(4);
+               cur_zone->turtle->children.add(cur_zone->desc, cur_zone); // Remove some poor behavior seen in tests.
                cur_zone = cur_zone->getSiblingLeft();
-               if (static_cast<uint32_t>(sy) != cur_zone->right_c) std::cerr << "Error in pathfinding 3." << std::endl;
+               if (static_cast<uint32_t>(sy) != cur_zone->right_c) pathError(3);
                scr_x += MAX2;
                break;
             case 1: // We went right
                sx = 0;
                sy = cur_zone->right_c;
-               if (static_cast<uint32_t>(pos_y) != (2 * cur_zone->right_c + 1)) std::cerr << "Error in pathfinding 1." << std::endl;
-               if ((MAX2 - 1) != pos_x) std::cerr << "Error in pathfinding 2." << std::endl;
+               if (static_cast<uint32_t>(pos_y) != (2 * cur_zone->right_c + 1)) pathError(1);
+               if ((MAX2 - 1) != pos_x) pathError(2);
+               cur_zone->turtle->children.add(cur_zone->desc, cur_zone); // Remove some poor behavior seen in tests.
                cur_zone = cur_zone->getSiblingRight();
-               if (static_cast<uint32_t>(sy) != cur_zone->left_c) std::cerr << "Error in pathfinding 3." << std::endl;
+               if (static_cast<uint32_t>(sy) != cur_zone->left_c) pathError(3);
+               if (false == cur_zone->isOpenLeft()) pathError(4);
                scr_x -= MAX2;
                break;
             case 2: // We went up
                sx = cur_zone->top_c;
                sy = TOP;
-               if (static_cast<uint32_t>(pos_x) != (2 * cur_zone->top_c + 1)) std::cerr << "Error in pathfinding 1." << std::endl;
-               if (0 != pos_y) std::cerr << "Error in pathfinding 2." << std::endl;
+               if (static_cast<uint32_t>(pos_x) != (2 * cur_zone->top_c + 1)) pathError(1);
+               if (0 != pos_y) pathError(2);
+               cur_zone->turtle->children.add(cur_zone->desc, cur_zone); // Remove some poor behavior seen in tests.
+               if (false == cur_zone->isOpenUp()) pathError(4);
                cur_zone = cur_zone->getSiblingUp();
-               if (static_cast<uint32_t>(sx) != cur_zone->bottom_c) std::cerr << "Error in pathfinding 3." << std::endl;
+               if (static_cast<uint32_t>(sx) != cur_zone->bottom_c) pathError(3);
                scr_y += MAX2;
                break;
             case 3: // We went down
                sx = cur_zone->bottom_c;
                sy = 0;
-               if (static_cast<uint32_t>(pos_x) != (2 * cur_zone->bottom_c + 1)) std::cerr << "Error in pathfinding 1." << std::endl;
-               if ((MAX2 - 1) != pos_y) std::cerr << "Error in pathfinding 2." << std::endl;
+               if (static_cast<uint32_t>(pos_x) != (2 * cur_zone->bottom_c + 1)) pathError(1);
+               if ((MAX2 - 1) != pos_y) pathError(2);
+               cur_zone->turtle->children.add(cur_zone->desc, cur_zone); // Remove some poor behavior seen in tests.
                cur_zone = cur_zone->getSiblingDown();
-               if (static_cast<uint32_t>(sx) != cur_zone->top_c) std::cerr << "Error in pathfinding 3." << std::endl;
+               if (static_cast<uint32_t>(sx) != cur_zone->top_c) pathError(3);
+               if (false == cur_zone->isOpenUp()) pathError(4);
                scr_y -= MAX2;
                break;
              }

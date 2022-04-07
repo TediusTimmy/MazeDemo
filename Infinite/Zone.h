@@ -87,6 +87,7 @@ public:
 
 private:
    void turtleDown(std::vector<char>&) const;
+   bool zerosAllTheWayDown() const;
    void normalUpdate();
  };
 

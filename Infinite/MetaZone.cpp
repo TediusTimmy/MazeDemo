@@ -33,9 +33,22 @@ SUCH DAMAGE.
 #include "external/city.h"
 #include "external/pcg_random.hpp"
 
+bool MetaZone::zerosAllTheWayDown() const
+ {
+   if ((0 == desc.x) && (0 == desc.y))
+    {
+      if (nullptr != turtle.get())
+       {
+         return turtle->zerosAllTheWayDown();
+       }
+      return true;
+    }
+   return false;
+ }
+
 void MetaZone::turtleDown(std::vector<char>& stack) const
  {
-   if ((0 != desc.x) || (0 != desc.y) || (nullptr != turtle.get()))
+   if (false == zerosAllTheWayDown())
     {
       stack.push_back(desc.x & 255);
       stack.push_back(desc.x >> 8);
