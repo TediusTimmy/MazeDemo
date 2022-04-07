@@ -34,6 +34,7 @@ SUCH DAMAGE.
 
 #include "Zone.h"
 #include "Uluru.h"
+#include "QuatroStack.h"
 
 // If you make more zones visible on screen, you may want to increase
 // the size of the least-recently-used cache, cacheMax, below.
@@ -62,17 +63,19 @@ std::shared_ptr<Zone> convert(const ZoneImpl& from)
       for (int x = 0; x < MAX; ++x)
        {
          ret->image[2 * y + 0][2 * x + 0] = olc::Pixel(0, 0, 0);
-         ret->image[2 * y + 0][2 * x + 1] = from.GetUp(x, y) ? olc::Pixel(0, 0, 0) : olc::Pixel(255, 255, 255);
+         ret->image[2 * y + 0][2 * x + 1] = from.GetUp(x, y) ? olc::Pixel(0, 0, 0) : olc::Pixel(128, 128, 128);
        }
       for (int x = 0; x < MAX; ++x)
        {
-         ret->image[2 * y + 1][2 * x + 0] = from.GetLeft(x, y) ? olc::Pixel(0, 0, 0) : olc::Pixel(255, 255, 255);
-         ret->image[2 * y + 1][2 * x + 1] = olc::Pixel(255, 255, 255);
+         ret->image[2 * y + 1][2 * x + 0] = from.GetLeft(x, y) ? olc::Pixel(0, 0, 0) : olc::Pixel(128, 128, 128);
+         ret->image[2 * y + 1][2 * x + 1] = olc::Pixel(128, 128, 128);
        }
     }
 
    return ret;
  }
+
+void solve(const ZoneImpl& zone, std::unique_ptr<QuatroStack>& path, int sx, int sy, int fx, int fy);
 
 class MazeSolver : public olc::PixelGameEngine
  {
@@ -88,15 +91,16 @@ public:
       pos_y = 1;
       scr_x = 1;
       scr_y = 1;
-//      pos_p = 0U;
+      pos_p = 0U;
 
-//      cr = 255;
-//      cg = 0;
-//      cb = 0;
-//      cm = 0;
+      cr = 255;
+      cg = 0;
+      cb = 0;
+      cm = 0;
 
       ZoneImpl::create(cur_zone->turtle);
       ZoneImpl::create(cur_zone);
+      cur_zone->realization = convert(*cur_zone->impl);
       cur_zone->turtle->children.add(cur_zone->desc, cur_zone);
 
       return true;
@@ -105,7 +109,7 @@ public:
    bool OnUserUpdate(float /*fElapsedTime*/) override
     {
 // MANUAL NAVIGATION
-#if 1
+#if 0
       if (GetKey(olc::Key::W).bHeld) --pos_y;
       if (GetKey(olc::Key::S).bHeld) ++pos_y;
       if (GetKey(olc::Key::A).bHeld) --pos_x;
@@ -167,127 +171,144 @@ public:
       scr_y = pos_y;
 #endif
 // SOLVER
-#if 0
+#if 1
       if (pos_p == path.size()) // Do I need to solve for a new path?
        {
-         int sx, sy, fx, fy;
+         int sx = 0, sy = 0, fx = 0, fy = 0, prev = -1;
 
          // Find starting point
          if (0U == path.size()) // First path find
           {
-            sx = 1;
-            sy = 1;
+            sx = 0; // Path finding occurs using passages, not pixels
+            sy = 0;
           }
          else // Any time else
           {
-            if (0 == pos_x) // Left edge
+            prev = cur_zone->turtle->last_direction;
+            switch (prev)
              {
-               sx = MAX2 - 1;
-               sy = pos_y;
-               scr_x = scr_x + MAX2;
-             }
-            else if (MAX2 - 1 == pos_x) // Right edge
-             {
+            case 0: // We went left
+               sx = TOP;
+               sy = cur_zone->left_c;
+               if (static_cast<uint32_t>(pos_y) != (2 * cur_zone->left_c + 1)) std::cerr << "Error in pathfinding 1." << std::endl;
+               if (0 != pos_x) std::cerr << "Error in pathfinding 2." << std::endl;
+               cur_zone = cur_zone->getSiblingLeft();
+               if (static_cast<uint32_t>(sy) != cur_zone->right_c) std::cerr << "Error in pathfinding 3." << std::endl;
+               scr_x += MAX2;
+               break;
+            case 1: // We went right
                sx = 0;
-               sy = pos_y;
-               scr_x = scr_x - MAX2;
-             }
-            else // Bottom edge (Maze structure does not currently allow for going up)
-             {
-               sx = pos_x;
+               sy = cur_zone->right_c;
+               if (static_cast<uint32_t>(pos_y) != (2 * cur_zone->right_c + 1)) std::cerr << "Error in pathfinding 1." << std::endl;
+               if ((MAX2 - 1) != pos_x) std::cerr << "Error in pathfinding 2." << std::endl;
+               cur_zone = cur_zone->getSiblingRight();
+               if (static_cast<uint32_t>(sy) != cur_zone->left_c) std::cerr << "Error in pathfinding 3." << std::endl;
+               scr_x -= MAX2;
+               break;
+            case 2: // We went up
+               sx = cur_zone->top_c;
+               sy = TOP;
+               if (static_cast<uint32_t>(pos_x) != (2 * cur_zone->top_c + 1)) std::cerr << "Error in pathfinding 1." << std::endl;
+               if (0 != pos_y) std::cerr << "Error in pathfinding 2." << std::endl;
+               cur_zone = cur_zone->getSiblingUp();
+               if (static_cast<uint32_t>(sx) != cur_zone->bottom_c) std::cerr << "Error in pathfinding 3." << std::endl;
+               scr_y += MAX2;
+               break;
+            case 3: // We went down
+               sx = cur_zone->bottom_c;
                sy = 0;
-               scr_y = scr_y - MAX2;
+               if (static_cast<uint32_t>(pos_x) != (2 * cur_zone->bottom_c + 1)) std::cerr << "Error in pathfinding 1." << std::endl;
+               if ((MAX2 - 1) != pos_y) std::cerr << "Error in pathfinding 2." << std::endl;
+               cur_zone = cur_zone->getSiblingDown();
+               if (static_cast<uint32_t>(sx) != cur_zone->top_c) std::cerr << "Error in pathfinding 3." << std::endl;
+               scr_y -= MAX2;
+               break;
              }
-
-            // Also advance zone
-            cur_zone.x = next_zone.x;
-            cur_zone.y = next_zone.y;
           }
 
          // Find ending point
-         Zone& zone = getCache(cur_zone.x, cur_zone.y);
-         if (0xFFFFFFFF == cur_zone.y) // Are we on the bottom? You should never get here.
+         cur_zone->turtle->updateDirection();
+         switch (cur_zone->turtle->last_direction)
           {
-            if (0xFFFFFFFF == cur_zone.x) // We are done and the universe is dead.
-             {
-               return false;
-             }
-            // Need to go right
-            fx = MAX2 - 1;
-            fy = zone.right_c;
-            ++next_zone.x;
-          }
-         else if (cur_zone.x < zone.bottom_z) // Need to go right
-          {
-            fx = MAX2 - 1;
-            fy = zone.right_c;
-            ++next_zone.x;
-          }
-         else if (cur_zone.x < zone.bottom_z) // Need to go left
-          {
+         case 0: // We go left
             fx = 0;
-            fy = zone.left_c;
-            --next_zone.x;
-          }
-         else // We are here! Go down.
-          {
-            fx = zone.bottom_c;
-            fy = MAX2 - 1;
-            ++next_zone.y;
+            fy = cur_zone->left_c;
+            break;
+         case 1: // We go right
+            fx = TOP;
+            fy = cur_zone->right_c;
+            break;
+         case 2: // We go up
+            fx = cur_zone->top_c;
+            fy = 0;
+            break;
+         case 3: // We go down
+            fx = cur_zone->bottom_c;
+            fy = TOP;
+            break;
           }
 
-         // Find the path between (sx, sy) and (fx, fy) with A*
-         if ((255 != zone.image[sy][sx].c.r) || (255 != zone.image[fy][fx].c.r)) // Hopefully unneeded
+         // Build solution path
+         std::unique_ptr<QuatroStack> solution;
+         solve(*cur_zone->impl, solution, sx, sy, fx, fy);
+
+         path.reserve(2 * (solution->sptr + 1));
+         path.resize(0U);
+         sx = 2 * sx + 1;
+         sy = 2 * sy + 1;
+         switch (prev) // If we have a previous zone, add in the transition, if it is in our zone
           {
-            std::cerr << "Logic error in path finding: cannot reach start/end : (" << sx << ", " << sy << ") -> (" << fx << ", " << fy << ")" << std::endl;
-            return false;
+         case 1:
+            path.push_back(std::make_pair(sx - 1, sy));
+            break;
+         case 3:
+            path.push_back(std::make_pair(sx, sy - 1));
+            break;
           }
-         zone.image[sy][sx] = olc::Pixel(128, 128, 128);
-
-         std::vector<Path> paths;
-         std::priority_queue<Path> frontier;
-         paths.push_back(Path(paths.size(), -1, 1 + std::abs(sx - fx) + std::abs(sy - fy), 1, sx, sy));
-
-         insertChildren(zone, paths, frontier, 0, fx, fy);
-         pos_p = 1U; // Use this as an answer found boolean.
-         while (false == frontier.empty())
+         path.push_back(std::make_pair(sx, sy));
+         for (int i = 0; i < solution->sptr; ++i)
           {
-            Path shortest = frontier.top();
-            frontier.pop();
-            if ((fx == shortest.x) && (fy == shortest.y)) // Have we found the end?
+            switch(solution->seek(i + 1))
              {
-               int walk = shortest.index;
-               int length = shortest.l;
-               path.resize(length);
-               pos_p = 0U;
-
-               --length; // Walk it backwards to build the path.
-               while (-1 != paths[walk].prev)
-                {
-                  path[length] = std::make_pair(paths[walk].x, paths[walk].y);
-                  walk = paths[walk].prev;
-                  --length;
-                }
-               path[length] = std::make_pair(paths[walk].x, paths[walk].y);
-
-               break; // Done
+            case 0:
+               path.push_back(std::make_pair(sx - 1, sy));
+               path.push_back(std::make_pair(sx - 2, sy));
+               sx = sx - 2;
+               break;
+            case 1:
+               path.push_back(std::make_pair(sx + 1, sy));
+               path.push_back(std::make_pair(sx + 2, sy));
+               sx = sx + 2;
+               break;
+            case 2:
+               path.push_back(std::make_pair(sx, sy - 1));
+               path.push_back(std::make_pair(sx, sy - 2));
+               sy = sy - 2;
+               break;
+            case 3:
+               path.push_back(std::make_pair(sx, sy + 1));
+               path.push_back(std::make_pair(sx, sy + 2));
+               sy = sy + 2;
+               break;
              }
-            insertChildren(zone, paths, frontier, shortest.index, fx, fy);
           }
-         if (0 != pos_p)
+         switch (cur_zone->turtle->last_direction) // If we have a next zone, but the transition is in our zone, fill it
           {
-//            MakeBMP2(zone, "core.bmp");
-            std::cerr << "Logic error in path finding: cannot reach end from start : (" << sx << ", " << sy << ") -> (" << fx << ", " << fy << ")" << std::endl;
-            return false;
+         case 0:
+            path.push_back(std::make_pair(sx - 1, sy));
+            break;
+         case 2:
+            path.push_back(std::make_pair(sx, sy - 1));
+            break;
           }
+         pos_p = 0U;
        }
 
       pos_x = path[pos_p].first;
       pos_y = path[pos_p].second;
       ++pos_p;
 
-      Zone& zone = getCache(cur_zone.x, cur_zone.y); // Color the current location to show progress
-      switch (cm)
+      switch (cm) // Color the current location to show progress
        {
       case 0: // cr 255, inc cg
          ++cg;
@@ -314,7 +335,7 @@ public:
          if (0 == cb) cm = 0;
          break;
        }
-      zone.image[pos_y][pos_x] = olc::Pixel(cr, cg, cb);
+      cur_zone->realization->image[pos_y][pos_x] = olc::Pixel(cr, cg, cb);
 
        {
          int epx = scr_x - pos_x;
@@ -391,9 +412,9 @@ public:
 private:
    std::shared_ptr<MetaZone> cur_zone;
    int pos_x, pos_y, scr_x, scr_y;
-   //std::vector<std::pair<int, int> > path;
-   //size_t pos_p;
-   //int cr, cg, cb, cm;
+   std::vector<std::pair<int, int> > path;
+   size_t pos_p;
+   int cr, cg, cb, cm;
  };
 
 int main (void)

@@ -52,11 +52,9 @@ At 800 FPS, it will take about 2000 years to run to the first time the maze turn
 Infinite
 --------
 
-Currently, this is in work. I know how I will do it, and have mostly solved all issues of infinite regress that I can think of. I just have to do it.
-
-UPDATE : A preview of the maze maker. It is a little slow, but it will work. It's not REALLY infinite, however the number of passages per side so-far implemented ought to have around 12 billion DIGITS in it. If you only keep the local zones per level, the stars will burn out before you solve enough of the maze to run out of memory.
+Currently, this is in work. Right now, it should run for around two weeks or so before crashing.
 
 Three things solved so far, I think:
 * How do you solve an infinite maze without having all of the maze? Assuming that we are starting in the top-most, left-most corner: as we go out the layers of meta-maze in the fractal, we will eventually hit a layer where the only direction that we can go is either right or down. Which is to say that going the other direction provably cannot reach the bottom or right edges. Frequently, this is only one more layer. As soon as we can prove the direction we need to go, we don't need to generate any more layers, and can solve all intervening layers, and start working on the solution.
-* How do you generate a seed for an infinite maze? I'm pretty sure that this can be done without infinite regress. You'll have to wait and see the code: a method that both considers the level that the zone is at, but also can truncate the infinite upper levels.
+* How do you generate a seed for an infinite maze? Treat the position in the maze as a massive number, and then truncate the leading (or trailing) zeros. And then use the depth in the seed computation to make sure similar locations get different seeds.
 * How do you know when a zone should connect to the next zone over? There is always a finite number of meta-mazes down to look until you are no longer at an edge, and can recurse back up.

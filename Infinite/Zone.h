@@ -55,6 +55,7 @@ public:
 
 class Zone; // Forward declare
 class ZoneImpl;
+class Solver;
 
 class MetaZone // A class for building the fine-structure of the maze
  {
@@ -67,6 +68,8 @@ public:
    Uluru<MetaZone, ZoneDesc> children;                // LRU cache of sub-mazes at (x, y, d - 1)
    std::shared_ptr<Zone> realization;                 // The picture of the zone
    std::shared_ptr<ZoneImpl> impl;                    // We want this for layer 1+
+   int last_direction;                                // Used for path finding
+   std::shared_ptr<Solver> solve;                     // The temporaries for the solution
 
    MetaZone(const ZoneDesc& zone, std::shared_ptr<MetaZone> turtle_ptr = std::shared_ptr<MetaZone>());
    MetaZone(const MetaZone&) = default;
@@ -79,6 +82,8 @@ public:
    std::shared_ptr<MetaZone> getSiblingDown();
    std::shared_ptr<MetaZone> getSiblingLeft();
    std::shared_ptr<MetaZone> getSiblingRight();
+
+   void updateDirection();
 
 private:
    void turtleDown(std::vector<char>&) const;

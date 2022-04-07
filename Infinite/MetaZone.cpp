@@ -28,6 +28,7 @@ SUCH DAMAGE.
 */
 
 #include "Zone.h"
+#include "QuatroStack.h"
 
 #include "external/city.h"
 #include "external/pcg_random.hpp"
@@ -299,4 +300,57 @@ std::shared_ptr<MetaZone> MetaZone::getSiblingRight()
     }
 
    return temp;
+ }
+
+void solve(const ZoneImpl& zone, std::unique_ptr<QuatroStack>& path, int sx, int sy, int fx, int fy);
+
+class Solver
+ {
+public:
+   std::unique_ptr<QuatroStack> right, down;
+   int equal, location;
+   bool useRight;
+ };
+
+void MetaZone::updateDirection()
+ {
+   if (nullptr == solve.get()) // Is this the very first call?
+    {
+      solve = std::make_shared<Solver>();
+
+      if (nullptr == turtle.get()) // I don't have a parent, so I am the top-left
+       {
+         // I'm sorry: I didn't realize I did this until the last minute.
+         ::solve(*impl, solve->down, 0, 0, bottom_c, TOP);
+         ::solve(*impl, solve->right, 0, 0, TOP, right_c);
+
+         solve->equal = 0;
+         for (; (solve->equal < solve->down->sptr) && (solve->equal < solve->right->sptr); ++solve->equal)
+          {
+            if (solve->down->seek(solve->equal + 1) != solve->right->seek(solve->equal + 1))
+             {
+               break;
+             }
+          }
+         solve->location = 0;
+         last_direction = solve->down->seek(solve->location + 1);
+
+         return;
+       }
+      else // My parent will guide me (don't I wish I had that in life?)
+       {
+         int from = turtle->last_direction;
+         turtle->updateDirection();
+         int to = turtle->last_direction;
+
+         // TODO : finish
+       }
+    }
+
+   if (solve->location < solve->equal)
+    {
+      ++solve->location;
+      last_direction = solve->down->seek(solve->location + 1);
+    }
+   // TODO : Finish
  }
