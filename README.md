@@ -52,7 +52,7 @@ At 800 FPS, it will take about 2000 years to run to the first time the maze turn
 Infinite
 --------
 
-Currently, this is in work. Right now, it should run for around four weeks or so before crashing (if I did my math right THIS time). The maze is both created and solved with a depth-first search. So, it is a VERY windy maze. All the passages are grey, because I think it looks better. Currently, it runs faster than the Giant maze, due to (I suspect) less map lookups in the drawing routine. You may notice a hiccup when new zones are generated and the current zone is solved.
+The maze is both created and solved with a depth-first search. So, it is a VERY windy maze. All the passages are grey, because I think it looks better. Currently, it runs faster than the Giant maze, due to (I suspect) less map lookups in the drawing routine. You may notice a hiccup when new zones are generated and the current zone is solved. If I got everything right, it should run for thousands of years before running the computer out of memory.
 
 Three things solved so far, I think:
 * How do you solve an infinite maze without having all of the maze? Assuming that we are starting in the top-most, left-most corner: as we go out the layers of meta-maze in the fractal, we will eventually hit a layer where the only direction that we can go is either right or down. Which is to say that going the other direction provably cannot reach the bottom or right edges. Frequently, this is only one more layer. As soon as we can prove the direction we need to go, we don't need to generate any more layers, and can solve all intervening layers, and start working on the solution.
