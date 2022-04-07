@@ -87,6 +87,7 @@ public:
 
 private:
    void turtleDown(std::vector<char>&) const;
+   void normalUpdate();
  };
 
 class ZoneImpl

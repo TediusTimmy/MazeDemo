@@ -157,7 +157,7 @@ std::shared_ptr<MetaZone> MetaZone::getSiblingUp()
     }
 
    // Now, for looking in the zone above. Recurse down as far as needed to do so
-   if (nullptr == turtle) // If I don't have a parent, then I'm in the top-left and there is no up
+   if (nullptr == turtle.get()) // If I don't have a parent, then I'm in the top-left and there is no up
       return turtle;
 
    std::shared_ptr<MetaZone> temp_par = turtle->getSiblingUp(); // Get my parent's up sibling
@@ -199,7 +199,7 @@ std::shared_ptr<MetaZone> MetaZone::getSiblingDown()
     }
 
    // Now, for looking in the zone below. Recurse down as far as needed to do so
-   if (nullptr == turtle) // If my parent doesn't exist, create them
+   if (nullptr == turtle.get()) // If my parent doesn't exist, create them
     {
       turtle = std::make_shared<MetaZone>(ZoneDesc(0, 0, desc.d + 1)); // Parent not existing implies (x, y) is (0, 0)
       ZoneImpl::create(turtle);
@@ -241,7 +241,7 @@ std::shared_ptr<MetaZone> MetaZone::getSiblingLeft()
     }
 
    // Now, for looking in the zone left. Recurse down as far as needed to do so
-   if (nullptr == turtle) // If I don't have a parent, then I'm in the top-left and there is no left
+   if (nullptr == turtle.get()) // If I don't have a parent, then I'm in the top-left and there is no left
       return turtle;
 
    std::shared_ptr<MetaZone> temp_par = turtle->getSiblingLeft(); // Get my parent's left sibling
@@ -283,7 +283,7 @@ std::shared_ptr<MetaZone> MetaZone::getSiblingRight()
     }
 
    // Now, for looking in the zone right. Recurse down as far as needed to do so
-   if (nullptr == turtle) // If my parent doesn't exist, create them
+   if (nullptr == turtle.get()) // If my parent doesn't exist, create them
     {
       turtle = std::make_shared<MetaZone>(ZoneDesc(0, 0, desc.d + 1)); // Parent not existing implies (x, y) is (0, 0)
       ZoneImpl::create(turtle);
@@ -312,11 +312,64 @@ public:
    bool useRight;
  };
 
+void MetaZone::normalUpdate()
+ {
+   int from = turtle->last_direction;
+   turtle->updateDirection();
+   int to = turtle->last_direction;
+
+   int sx = 0, sy = 0, fx = 0, fy = 0;
+   switch (from)
+    {
+   case 0:
+      sx = TOP;
+      sy = left_c;
+      break;
+   case 1:
+      sx = 0;
+      sy = right_c;
+      break;
+   case 2:
+      sx = top_c;
+      sy = TOP;
+      break;
+   case 3:
+      sx = bottom_c;
+      sy = 0;
+      break;
+    }
+   switch (to)
+    {
+   case 0:
+      fx = 0;
+      fy = left_c;
+      break;
+   case 1:
+      fx = TOP;
+      fy = right_c;
+      break;
+   case 2:
+      fx = top_c;
+      fy = 0;
+      break;
+   case 3:
+      fx = bottom_c;
+      fy = TOP;
+      break;
+    }
+   ::solve(*impl, solve->down, sx, sy, fx, fy);
+
+   solve->equal = solve->down->sptr;
+   solve->location = 0;
+   last_direction = solve->down->seek(solve->location + 1);
+ }
+
 void MetaZone::updateDirection()
  {
    if (nullptr == solve.get()) // Is this the very first call?
     {
       solve = std::make_shared<Solver>();
+      solve->useRight = false;
 
       if (nullptr == turtle.get()) // I don't have a parent, so I am the top-left
        {
@@ -334,23 +387,48 @@ void MetaZone::updateDirection()
           }
          solve->location = 0;
          last_direction = solve->down->seek(solve->location + 1);
-
-         return;
        }
       else // My parent will guide me (don't I wish I had that in life?)
        {
-         int from = turtle->last_direction;
-         turtle->updateDirection();
-         int to = turtle->last_direction;
-
-         // TODO : finish
+         normalUpdate();
        }
     }
 
-   if (solve->location < solve->equal)
+   else if (solve->location < solve->equal) // Subsequent calls before deciding which way to go, or after deciding which way to go, or when we know which way to go.
     {
       ++solve->location;
-      last_direction = solve->down->seek(solve->location + 1);
+      if (false == solve->useRight)
+         last_direction = solve->down->seek(solve->location + 1);
+      else
+         last_direction = solve->right->seek(solve->location + 1);
     }
-   // TODO : Finish
+   else // Recurse down and decide which way to go
+    {
+      if (nullptr == turtle.get()) // If my parent doesn't exist, create them
+       {
+         turtle = std::make_shared<MetaZone>(ZoneDesc(0, 0, desc.d + 1)); // Parent not existing implies (x, y) is (0, 0)
+         ZoneImpl::create(turtle);
+
+         turtle->updateDirection(); // Now, update their path
+
+         switch (turtle->last_direction) // Only two options: right or down
+          {
+         case 1:
+            solve->useRight = true;
+            solve->equal = solve->right->sptr;
+            last_direction = solve->right->seek(solve->location + 1);
+            break;
+         case 3:
+            solve->useRight = false;
+            solve->equal = solve->down->sptr;
+            last_direction = solve->down->seek(solve->location + 1);
+            break;
+          }
+       }
+      else // Parent exists and we are following a path.
+       {
+         solve->useRight = false;
+         normalUpdate();
+       }
+    }
  }
