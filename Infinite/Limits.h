@@ -36,5 +36,6 @@ const int MAX = 1024;
 const int TOP = MAX - 1;
 const size_t ONE_BIT = (MAX < 64) ? (MAX * MAX) / 64 : MAX * (MAX / 64);
 const size_t TWO_BITS = (MAX < 64) ? (MAX * MAX) / 32 : MAX * (MAX / 32);
+const size_t CACHE_MAX = 8U;
 
 #endif /* LIMITS_H */

@@ -33,6 +33,15 @@ SUCH DAMAGE.
 #include "external/city.h"
 #include "external/pcg_random.hpp"
 
+void MetaZone::cacheMeOut(std::shared_ptr<MetaZone> me)
+ {
+   if (nullptr != me->turtle.get())
+    {
+      me->turtle->children.add(me->desc, me);
+      cacheMeOut(me->turtle);
+    }
+ }
+
 bool MetaZone::zerosAllTheWayDown() const
  {
    if ((0 == desc.x) && (0 == desc.y))
@@ -73,19 +82,18 @@ __uint128_t MakeSeed(uint32_t a, uint32_t b, uint32_t c, __uint128_t d)
    return static_cast<__uint128_t>(Uint128Low64(res)) | ((static_cast<__uint128_t>(Uint128High64(res))) << 64);
  }
 
-__uint128_t MakeSeed(uint32_t a, uint32_t b, uint32_t c, uint32_t d, __uint128_t e)
+__uint128_t MakeSeed2(uint32_t a, uint32_t b, uint32_t c, uint32_t d)
  {
-   char string [32];
+   char string [16];
    std::memcpy(string, reinterpret_cast<char*>(static_cast<void*>(&a)), 4);
    std::memcpy(string + 4, reinterpret_cast<char*>(static_cast<void*>(&b)), 4);
    std::memcpy(string + 8, reinterpret_cast<char*>(static_cast<void*>(&c)), 4);
    std::memcpy(string + 12, reinterpret_cast<char*>(static_cast<void*>(&d)), 4);
-   std::memcpy(string + 16, reinterpret_cast<char*>(static_cast<void*>(&e)), 16);
-   uint128 res = CityHash128(string, 32);
+   uint128 res = CityHash128(string, 16);
    return static_cast<__uint128_t>(Uint128Low64(res)) | ((static_cast<__uint128_t>(Uint128High64(res))) << 64);
  }
 
-MetaZone::MetaZone(const ZoneDesc& zone, std::shared_ptr<MetaZone> turtle_ptr) : desc(zone), turtle(turtle_ptr), children(8U)
+MetaZone::MetaZone(const ZoneDesc& zone, std::shared_ptr<MetaZone> turtle_ptr) : desc(zone), turtle(turtle_ptr), children(CACHE_MAX)
  {
    if (nullptr != turtle.get())
     {
@@ -102,10 +110,10 @@ MetaZone::MetaZone(const ZoneDesc& zone, std::shared_ptr<MetaZone> turtle_ptr) :
 
    seed = MakeSeed(desc.x, desc.y, desc.d, turtle_hash);
 
-   pcg64 top    (MakeSeed(desc.x, (desc.y - 1) & TOP, desc.y, desc.d, turtle_hash));
-   pcg64 left   (MakeSeed((desc.x - 1) & TOP, desc.x, desc.y, desc.d, turtle_hash));
-   pcg64 right  (MakeSeed(desc.x, (desc.x + 1) & TOP, desc.y, desc.d, turtle_hash));
-   pcg64 bottom (MakeSeed(desc.x, desc.y, (desc.y + 1) & TOP, desc.d, turtle_hash));
+   pcg64 top    (MakeSeed2(desc.x, (desc.y - 1) & TOP, desc.y, desc.d));
+   pcg64 left   (MakeSeed2((desc.x - 1) & TOP, desc.x, desc.y, desc.d));
+   pcg64 right  (MakeSeed2(desc.x, (desc.x + 1) & TOP, desc.y, desc.d));
+   pcg64 bottom (MakeSeed2(desc.x, desc.y, (desc.y + 1) & TOP, desc.d));
 
    top_c = top() & TOP;
    left_c = left() & TOP;
@@ -336,18 +344,18 @@ void MetaZone::normalUpdate()
     {
    case 0:
       sx = TOP;
-      sy = left_c;
+      sy = right_c;
       break;
    case 1:
       sx = 0;
-      sy = right_c;
+      sy = left_c;
       break;
    case 2:
-      sx = top_c;
+      sx = bottom_c;
       sy = TOP;
       break;
    case 3:
-      sx = bottom_c;
+      sx = top_c;
       sy = 0;
       break;
     }
@@ -371,10 +379,45 @@ void MetaZone::normalUpdate()
       break;
     }
    ::solve(*impl, solve->down, sx, sy, fx, fy);
+   solve->down->push(to); // Add the final step
 
    solve->equal = solve->down->sptr;
    solve->location = 0;
    last_direction = solve->down->seek(solve->location + 1);
+ }
+
+void MetaZone::fullPath()
+ {
+   if (nullptr == turtle.get()) // If my parent doesn't exist, create them
+    {
+      turtle = std::make_shared<MetaZone>(ZoneDesc(0, 0, desc.d + 1)); // Parent not existing implies (x, y) is (0, 0)
+      ZoneImpl::create(turtle);
+    }
+
+   if (nullptr == turtle->solve.get())
+    {
+      ++solve->location;
+      turtle->updateDirection(); // Now, update their path
+
+      switch (turtle->last_direction) // Only two options: right or down
+       {
+      case 1:
+         solve->useRight = true;
+         solve->equal = solve->right->sptr;
+         last_direction = solve->right->seek(solve->location + 1);
+         break;
+      case 3:
+         solve->useRight = false;
+         solve->equal = solve->down->sptr;
+         last_direction = solve->down->seek(solve->location + 1);
+         break;
+       }
+    }
+   else // Parent exists and we are following a path.
+    {
+      solve->useRight = false;
+      normalUpdate();
+    }
  }
 
 void MetaZone::updateDirection()
@@ -389,6 +432,8 @@ void MetaZone::updateDirection()
          // I'm sorry: I didn't realize I did this until the last minute.
          ::solve(*impl, solve->down, 0, 0, bottom_c, TOP);
          ::solve(*impl, solve->right, 0, 0, TOP, right_c);
+         solve->down->push(3); // Add the final step out
+         solve->right->push(1);
 
          solve->equal = 0;
          for (; (solve->equal < solve->down->sptr) && (solve->equal < solve->right->sptr); ++solve->equal)
@@ -398,8 +443,18 @@ void MetaZone::updateDirection()
                break;
              }
           }
-         solve->location = 0;
-         last_direction = solve->down->seek(solve->location + 1);
+         --solve->equal;
+
+         if (-1 == solve->equal) // Do we have to compute the full path anyway?
+          {
+            solve->location = -1;
+            fullPath();
+          }
+         else
+          {
+            solve->location = 0;
+            last_direction = solve->down->seek(solve->location + 1);
+          }
        }
       else // My parent will guide me (don't I wish I had that in life?)
        {
@@ -417,31 +472,6 @@ void MetaZone::updateDirection()
     }
    else // Recurse down and decide which way to go
     {
-      if (nullptr == turtle.get()) // If my parent doesn't exist, create them
-       {
-         turtle = std::make_shared<MetaZone>(ZoneDesc(0, 0, desc.d + 1)); // Parent not existing implies (x, y) is (0, 0)
-         ZoneImpl::create(turtle);
-
-         turtle->updateDirection(); // Now, update their path
-
-         switch (turtle->last_direction) // Only two options: right or down
-          {
-         case 1:
-            solve->useRight = true;
-            solve->equal = solve->right->sptr;
-            last_direction = solve->right->seek(solve->location + 1);
-            break;
-         case 3:
-            solve->useRight = false;
-            solve->equal = solve->down->sptr;
-            last_direction = solve->down->seek(solve->location + 1);
-            break;
-          }
-       }
-      else // Parent exists and we are following a path.
-       {
-         solve->useRight = false;
-         normalUpdate();
-       }
+      fullPath();
     }
  }

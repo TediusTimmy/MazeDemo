@@ -85,10 +85,13 @@ public:
 
    void updateDirection();
 
+   static void cacheMeOut(std::shared_ptr<MetaZone> me);
+
 private:
    void turtleDown(std::vector<char>&) const;
    bool zerosAllTheWayDown() const;
    void normalUpdate();
+   void fullPath();
  };
 
 class ZoneImpl

@@ -203,7 +203,7 @@ public:
                if (static_cast<uint32_t>(pos_y) != (2 * cur_zone->left_c + 1)) pathError(1);
                if (0 != pos_x) pathError(2);
                if (false == cur_zone->isOpenLeft()) pathError(4);
-               cur_zone->turtle->children.add(cur_zone->desc, cur_zone); // Remove some poor behavior seen in tests.
+               MetaZone::cacheMeOut(cur_zone); // Remove some poor behavior seen in tests.
                cur_zone = cur_zone->getSiblingLeft();
                if (static_cast<uint32_t>(sy) != cur_zone->right_c) pathError(3);
                scr_x += MAX2;
@@ -213,7 +213,7 @@ public:
                sy = cur_zone->right_c;
                if (static_cast<uint32_t>(pos_y) != (2 * cur_zone->right_c + 1)) pathError(1);
                if ((MAX2 - 1) != pos_x) pathError(2);
-               cur_zone->turtle->children.add(cur_zone->desc, cur_zone); // Remove some poor behavior seen in tests.
+               MetaZone::cacheMeOut(cur_zone); // Remove some poor behavior seen in tests.
                cur_zone = cur_zone->getSiblingRight();
                if (static_cast<uint32_t>(sy) != cur_zone->left_c) pathError(3);
                if (false == cur_zone->isOpenLeft()) pathError(4);
@@ -224,7 +224,7 @@ public:
                sy = TOP;
                if (static_cast<uint32_t>(pos_x) != (2 * cur_zone->top_c + 1)) pathError(1);
                if (0 != pos_y) pathError(2);
-               cur_zone->turtle->children.add(cur_zone->desc, cur_zone); // Remove some poor behavior seen in tests.
+               MetaZone::cacheMeOut(cur_zone); // Remove some poor behavior seen in tests.
                if (false == cur_zone->isOpenUp()) pathError(4);
                cur_zone = cur_zone->getSiblingUp();
                if (static_cast<uint32_t>(sx) != cur_zone->bottom_c) pathError(3);
@@ -235,7 +235,7 @@ public:
                sy = 0;
                if (static_cast<uint32_t>(pos_x) != (2 * cur_zone->bottom_c + 1)) pathError(1);
                if ((MAX2 - 1) != pos_y) pathError(2);
-               cur_zone->turtle->children.add(cur_zone->desc, cur_zone); // Remove some poor behavior seen in tests.
+               MetaZone::cacheMeOut(cur_zone); // Remove some poor behavior seen in tests.
                cur_zone = cur_zone->getSiblingDown();
                if (static_cast<uint32_t>(sx) != cur_zone->top_c) pathError(3);
                if (false == cur_zone->isOpenUp()) pathError(4);
