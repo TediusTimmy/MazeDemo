@@ -68,7 +68,6 @@ public:
    Uluru<MetaZone, ZoneDesc> children;                // LRU cache of sub-mazes at (x, y, d - 1)
    std::shared_ptr<Zone> realization;                 // The picture of the zone
    std::shared_ptr<ZoneImpl> impl;                    // We want this for layer 1+
-   int last_direction;                                // Used for path finding
    std::shared_ptr<Solver> solve;                     // The temporaries for the solution
 
    MetaZone(const ZoneDesc& zone, std::shared_ptr<MetaZone> turtle_ptr = std::shared_ptr<MetaZone>());
@@ -83,6 +82,7 @@ public:
    std::shared_ptr<MetaZone> getSiblingLeft();
    std::shared_ptr<MetaZone> getSiblingRight();
 
+   int& lastDirection() { return directions[desc.d]; } // Used for path finding
    void updateDirection();
 
    static void cacheMeOut(std::shared_ptr<MetaZone> me);
@@ -92,6 +92,8 @@ private:
    bool zerosAllTheWayDown() const;
    void normalUpdate();
    void fullPath();
+
+   static std::vector<int> directions;
  };
 
 class ZoneImpl

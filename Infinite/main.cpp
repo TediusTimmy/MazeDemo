@@ -194,7 +194,7 @@ public:
           }
          else // Any time else
           {
-            prev = cur_zone->turtle->last_direction;
+            prev = cur_zone->turtle->lastDirection();
             switch (prev)
              {
             case 0: // We went left
@@ -246,7 +246,7 @@ public:
 
          // Find ending point
          cur_zone->turtle->updateDirection();
-         switch (cur_zone->turtle->last_direction)
+         switch (cur_zone->turtle->lastDirection())
           {
          case 0: // We go left
             fx = 0;
@@ -310,7 +310,7 @@ public:
                break;
              }
           }
-         switch (cur_zone->turtle->last_direction) // If we have a next zone, but the transition is in our zone, fill it
+         switch (cur_zone->turtle->lastDirection()) // If we have a next zone, but the transition is in our zone, fill it
           {
          case 0:
             path.push_back(std::make_pair(sx - 1, sy));

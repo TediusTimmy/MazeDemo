@@ -38,6 +38,8 @@ SUCH DAMAGE.
 #include "external/city.h"
 #include "external/pcg_random.hpp"
 
+std::vector<int> MetaZone::directions;
+
 void MetaZone::cacheMeOut(std::shared_ptr<MetaZone> me)
  {
    if (nullptr != me->turtle.get())
@@ -179,7 +181,6 @@ std::shared_ptr<MetaZone> MetaZone::getSiblingUp()
          turtle->children.add(temp->desc, temp);
        }
 
-      temp->last_direction = last_direction;
       return temp;
     }
 
@@ -200,7 +201,6 @@ std::shared_ptr<MetaZone> MetaZone::getSiblingUp()
       temp_par->children.add(temp->desc, temp);
     }
 
-   temp->last_direction = last_direction;
    return temp;
  }
 
@@ -223,7 +223,6 @@ std::shared_ptr<MetaZone> MetaZone::getSiblingDown()
          turtle->children.add(temp->desc, temp);
        }
 
-      temp->last_direction = last_direction;
       return temp;
     }
 
@@ -244,7 +243,6 @@ std::shared_ptr<MetaZone> MetaZone::getSiblingDown()
       temp_par->children.add(temp->desc, temp);
     }
 
-   temp->last_direction = last_direction;
    return temp;
  }
 
@@ -267,7 +265,6 @@ std::shared_ptr<MetaZone> MetaZone::getSiblingLeft()
          turtle->children.add(temp->desc, temp);
        }
 
-      temp->last_direction = last_direction;
       return temp;
     }
 
@@ -288,7 +285,6 @@ std::shared_ptr<MetaZone> MetaZone::getSiblingLeft()
       temp_par->children.add(temp->desc, temp);
     }
 
-   temp->last_direction = last_direction;
    return temp;
  }
 
@@ -311,7 +307,6 @@ std::shared_ptr<MetaZone> MetaZone::getSiblingRight()
          turtle->children.add(temp->desc, temp);
        }
 
-      temp->last_direction = last_direction;
       return temp;
     }
 
@@ -332,7 +327,6 @@ std::shared_ptr<MetaZone> MetaZone::getSiblingRight()
       temp_par->children.add(temp->desc, temp);
     }
 
-   temp->last_direction = last_direction;
    return temp;
  }
 
@@ -348,9 +342,9 @@ public:
 
 void MetaZone::normalUpdate()
  {
-   int from = turtle->last_direction;
+   int from = turtle->lastDirection();
    turtle->updateDirection();
-   int to = turtle->last_direction;
+   int to = turtle->lastDirection();
 
    int sx = 0, sy = 0, fx = 0, fy = 0;
    switch (from)
@@ -406,7 +400,7 @@ std::cout << std::endl;
 
    solve->equal = solve->down->sptr;
    solve->location = 0;
-   last_direction = solve->down->seek(solve->location + 1);
+   lastDirection() = solve->down->seek(solve->location + 1);
  }
 
 void MetaZone::fullPath()
@@ -422,17 +416,17 @@ void MetaZone::fullPath()
       ++solve->location;
       turtle->updateDirection(); // Now, update their path
 
-      switch (turtle->last_direction) // Only two options: right or down
+      switch (turtle->lastDirection()) // Only two options: right or down
        {
       case 1:
          solve->useRight = true;
          solve->equal = solve->right->sptr;
-         last_direction = solve->right->seek(solve->location + 1);
+         lastDirection() = solve->right->seek(solve->location + 1);
          break;
       case 3:
          solve->useRight = false;
          solve->equal = solve->down->sptr;
-         last_direction = solve->down->seek(solve->location + 1);
+         lastDirection() = solve->down->seek(solve->location + 1);
          break;
        }
 #ifdef DEBUG_PATHFINDING
@@ -450,6 +444,10 @@ void MetaZone::updateDirection()
  {
    if (nullptr == solve.get()) // Is this the very first call?
     {
+      if (desc.d >= directions.size())
+       {
+         directions.resize(desc.d + 1);
+       }
       solve = std::make_shared<Solver>();
       solve->useRight = false;
 
@@ -493,7 +491,7 @@ std::cout << std::endl;
          else
           {
             solve->location = 0;
-            last_direction = solve->down->seek(solve->location + 1);
+            lastDirection() = solve->down->seek(solve->location + 1);
           }
        }
       else // My parent will guide me (don't I wish I had that in life?)
@@ -506,15 +504,15 @@ std::cout << std::endl;
     {
       ++solve->location;
       if (false == solve->useRight)
-         last_direction = solve->down->seek(solve->location + 1);
+         lastDirection() = solve->down->seek(solve->location + 1);
       else
-         last_direction = solve->right->seek(solve->location + 1);
+         lastDirection() = solve->right->seek(solve->location + 1);
     }
    else // Recurse down and decide which way to go
     {
       fullPath();
     }
 #ifdef DEBUG_PATHFINDING
-std::cout << "Move " << solve->location << " for (" << desc.x << ", " << desc.y << ", " << desc.d << ") : " << decode[last_direction] << std::endl;
+std::cout << "Move " << solve->location << " for (" << desc.x << ", " << desc.y << ", " << desc.d << ") : " << decode[lastDirection()] << std::endl;
 #endif /* DEBUG_PATHFINDING */
  }
