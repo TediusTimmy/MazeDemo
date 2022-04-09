@@ -77,10 +77,10 @@ public:
    bool isOpenUp() const;
    bool isOpenLeft() const;
 
-   std::shared_ptr<MetaZone> getSiblingUp();
-   std::shared_ptr<MetaZone> getSiblingDown();
-   std::shared_ptr<MetaZone> getSiblingLeft();
-   std::shared_ptr<MetaZone> getSiblingRight();
+   std::shared_ptr<MetaZone> getSiblingUp(const std::shared_ptr<MetaZone>& me);
+   std::shared_ptr<MetaZone> getSiblingDown(const std::shared_ptr<MetaZone>& me);
+   std::shared_ptr<MetaZone> getSiblingLeft(const std::shared_ptr<MetaZone>& me);
+   std::shared_ptr<MetaZone> getSiblingRight(const std::shared_ptr<MetaZone>& me);
 
    int& lastDirection() { return directions[desc.d]; } // Used for path finding
    void updateDirection();
@@ -94,6 +94,11 @@ private:
    void fullPath();
 
    static std::vector<int> directions;
+
+   std::shared_ptr<MetaZone> su;
+   std::shared_ptr<MetaZone> sd;
+   std::shared_ptr<MetaZone> sl;
+   std::shared_ptr<MetaZone> sr;
  };
 
 class ZoneImpl

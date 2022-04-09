@@ -75,6 +75,15 @@ std::shared_ptr<Zone> convert(const ZoneImpl& from)
    return ret;
  }
 
+ // 1 : We weren't at the zone's designated exit when leaving.
+ // 2 : We weren't at the far side of the zone when leaving.
+ // 3 : The exit of the old zone wasn't the entrance of the new zone.
+ // 4 : The side we went through wasn't open.
+void pathError(int level)
+ {
+   std::cerr << "Error in pathfinding " << level << "." << std::endl;
+ }
+
 class MazeSolver : public olc::PixelGameEngine
  {
 public:
@@ -183,8 +192,12 @@ public:
           {
             pos_x += MAX2;
             scr_x += MAX2;
+            if (static_cast<uint32_t>(pos_y) != (2 * cur_zone->left_c + 1)) pathError(1);
+            if ((MAX2 - 1) != pos_x) pathError(2);
+            if (false == cur_zone->isOpenLeft()) pathError(4);
             MetaZone::cacheMeOut(cur_zone); // Remove some poor behavior seen in tests.
-            cur_zone = cur_zone->getSiblingLeft();
+            cur_zone = cur_zone->getSiblingLeft(cur_zone);
+            if (static_cast<uint32_t>(pos_y) != (2 * cur_zone->right_c + 1)) pathError(3);
           }
          break;
       case 1: // We go right
@@ -193,8 +206,12 @@ public:
           {
             pos_x -= MAX2;
             scr_x -= MAX2;
+            if (static_cast<uint32_t>(pos_y) != (2 * cur_zone->right_c + 1)) pathError(1);
+            if (0 != pos_x) pathError(2);
             MetaZone::cacheMeOut(cur_zone); // Remove some poor behavior seen in tests.
-            cur_zone = cur_zone->getSiblingRight();
+            cur_zone = cur_zone->getSiblingRight(cur_zone);
+            if (static_cast<uint32_t>(pos_y) != (2 * cur_zone->left_c + 1)) pathError(3);
+            if (false == cur_zone->isOpenLeft()) pathError(4);
           }
          break;
       case 2: // We go up
@@ -203,8 +220,12 @@ public:
           {
             pos_y += MAX2;
             scr_y += MAX2;
+            if (static_cast<uint32_t>(pos_x) != (2 * cur_zone->top_c + 1)) pathError(1);
+            if ((MAX2 - 1) != pos_y) pathError(2);
+            if (false == cur_zone->isOpenUp()) pathError(4);
             MetaZone::cacheMeOut(cur_zone); // Remove some poor behavior seen in tests.
-            cur_zone = cur_zone->getSiblingUp();
+            cur_zone = cur_zone->getSiblingUp(cur_zone);
+            if (static_cast<uint32_t>(pos_x) != (2 * cur_zone->bottom_c + 1)) pathError(3);
           }
          break;
       case 3: // We go down
@@ -213,8 +234,12 @@ public:
           {
             pos_y -= MAX2;
             scr_y -= MAX2;
+            if (static_cast<uint32_t>(pos_x) != (2 * cur_zone->bottom_c + 1)) pathError(1);
+            if (0 != pos_y) pathError(2);
             MetaZone::cacheMeOut(cur_zone); // Remove some poor behavior seen in tests.
-            cur_zone = cur_zone->getSiblingDown();
+            cur_zone = cur_zone->getSiblingDown(cur_zone);
+            if (static_cast<uint32_t>(pos_x) != (2 * cur_zone->top_c + 1)) pathError(3);
+            if (false == cur_zone->isOpenUp()) pathError(4);
           }
          break;
        }
@@ -248,6 +273,8 @@ public:
          if (0 == cb) cm = 0;
          break;
        }
+      if (nullptr == cur_zone->realization.get())
+         cur_zone->realization = convert(*cur_zone->impl);
       if (olc::nDefaultPixel == cur_zone->realization->image[pos_y][pos_x].n)
        {
          std::cerr << "Error in path finding." << std::endl;
@@ -290,33 +317,30 @@ public:
             while (ex < 0)
              {
                if (nullptr != temp.get())
-                  temp = temp->getSiblingLeft();
+                  temp = temp->getSiblingLeft(temp);
                ex += MAX2;
              }
             while (ex >= MAX2)
              {
                if (nullptr != temp.get())
-                  temp = temp->getSiblingRight();
+                  temp = temp->getSiblingRight(temp);
                ex -= MAX2;
              }
             while (ey < 0)
              {
                if (nullptr != temp.get())
-                  temp = temp->getSiblingUp();
+                  temp = temp->getSiblingUp(temp);
                ey += MAX2;
              }
             while (ey >= MAX2)
              {
                if (nullptr != temp.get())
-                  temp = temp->getSiblingDown();
+                  temp = temp->getSiblingDown(temp);
                ey -= MAX2;
              }
 
-            if (nullptr != temp.get())
+            if ((nullptr != temp.get()) && (nullptr != temp->realization.get()))
              {
-               if (nullptr == temp->realization.get())
-                  temp->realization = convert(*temp->impl);
-
                Draw(x, y, temp->realization->image[ey][ex]);
              }
             else

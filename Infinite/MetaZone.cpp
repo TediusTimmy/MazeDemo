@@ -30,6 +30,7 @@ SUCH DAMAGE.
 #ifdef DEBUG_PATHFINDING
  #include <iostream>
  const char* decode = "LRUD";
+ const int DEPTH = 0;
 #endif /* DEBUG_PATHFINDING */
 
 #include "Zone.h"
@@ -162,8 +163,13 @@ bool MetaZone::isOpenLeft() const
    return false == turtle->impl->GetLeft(desc.x, desc.y);
  }
 
-std::shared_ptr<MetaZone> MetaZone::getSiblingUp()
+std::shared_ptr<MetaZone> MetaZone::getSiblingUp(const std::shared_ptr<MetaZone>& me)
  {
+   if (nullptr != su.get())
+    {
+      return su;
+    }
+
    if (desc.y > 0) // Base case : lookup in parent
     {
       if (nullptr == turtle.get()) // If my parent doesn't exist, create them
@@ -181,6 +187,8 @@ std::shared_ptr<MetaZone> MetaZone::getSiblingUp()
          turtle->children.add(temp->desc, temp);
        }
 
+      su = temp;
+      temp->sd = me;
       return temp;
     }
 
@@ -188,7 +196,7 @@ std::shared_ptr<MetaZone> MetaZone::getSiblingUp()
    if (nullptr == turtle.get()) // If I don't have a parent, then I'm in the top-left and there is no up
       return turtle;
 
-   std::shared_ptr<MetaZone> temp_par = turtle->getSiblingUp(); // Get my parent's up sibling
+   std::shared_ptr<MetaZone> temp_par = turtle->getSiblingUp(turtle); // Get my parent's up sibling
    if (nullptr == temp_par) // Stop if it doesn't have one
       return temp_par;
 
@@ -201,11 +209,18 @@ std::shared_ptr<MetaZone> MetaZone::getSiblingUp()
       temp_par->children.add(temp->desc, temp);
     }
 
+   su = temp;
+   temp->sd = me;
    return temp;
  }
 
-std::shared_ptr<MetaZone> MetaZone::getSiblingDown()
+std::shared_ptr<MetaZone> MetaZone::getSiblingDown(const std::shared_ptr<MetaZone>& me)
  {
+   if (nullptr != sd.get())
+    {
+      return sd;
+    }
+
    if (desc.y < TOP) // Base case : lookup in parent
     {
       if (nullptr == turtle.get()) // If my parent doesn't exist, create them
@@ -223,6 +238,8 @@ std::shared_ptr<MetaZone> MetaZone::getSiblingDown()
          turtle->children.add(temp->desc, temp);
        }
 
+      sd = temp;
+      temp->su = me;
       return temp;
     }
 
@@ -233,7 +250,7 @@ std::shared_ptr<MetaZone> MetaZone::getSiblingDown()
       ZoneImpl::create(turtle);
     }
 
-   std::shared_ptr<MetaZone> temp_par = turtle->getSiblingDown(); // Get my parent's down sibling : it MUST have a down sibling
+   std::shared_ptr<MetaZone> temp_par = turtle->getSiblingDown(turtle); // Get my parent's down sibling : it MUST have a down sibling
    std::shared_ptr<MetaZone> temp = temp_par->children.get(ZoneDesc(desc.x, 0, desc.d)); // Lookup cousin
 
    if (nullptr == temp.get()) // If my cousin doesn't exist, create them
@@ -243,11 +260,18 @@ std::shared_ptr<MetaZone> MetaZone::getSiblingDown()
       temp_par->children.add(temp->desc, temp);
     }
 
+   sd = temp;
+   temp->su = me;
    return temp;
  }
 
-std::shared_ptr<MetaZone> MetaZone::getSiblingLeft()
+std::shared_ptr<MetaZone> MetaZone::getSiblingLeft(const std::shared_ptr<MetaZone>& me)
  {
+   if (nullptr != sl.get())
+    {
+      return sl;
+    }
+
    if (desc.x > 0) // Base case : lookup in parent
     {
       if (nullptr == turtle.get()) // If my parent doesn't exist, create them
@@ -265,6 +289,8 @@ std::shared_ptr<MetaZone> MetaZone::getSiblingLeft()
          turtle->children.add(temp->desc, temp);
        }
 
+      sl = temp;
+      temp->sr = me;
       return temp;
     }
 
@@ -272,7 +298,7 @@ std::shared_ptr<MetaZone> MetaZone::getSiblingLeft()
    if (nullptr == turtle.get()) // If I don't have a parent, then I'm in the top-left and there is no left
       return turtle;
 
-   std::shared_ptr<MetaZone> temp_par = turtle->getSiblingLeft(); // Get my parent's left sibling
+   std::shared_ptr<MetaZone> temp_par = turtle->getSiblingLeft(turtle); // Get my parent's left sibling
    if (nullptr == temp_par) // Stop if it doesn't have one
       return temp_par;
 
@@ -285,11 +311,18 @@ std::shared_ptr<MetaZone> MetaZone::getSiblingLeft()
       temp_par->children.add(temp->desc, temp);
     }
 
+   sl = temp;
+   temp->sr = me;
    return temp;
  }
 
-std::shared_ptr<MetaZone> MetaZone::getSiblingRight()
+std::shared_ptr<MetaZone> MetaZone::getSiblingRight(const std::shared_ptr<MetaZone>& me)
  {
+   if (nullptr != sr.get())
+    {
+      return sr;
+    }
+
    if (desc.x < TOP) // Base case : lookup in parent
     {
       if (nullptr == turtle.get()) // If my parent doesn't exist, create them
@@ -307,6 +340,8 @@ std::shared_ptr<MetaZone> MetaZone::getSiblingRight()
          turtle->children.add(temp->desc, temp);
        }
 
+      sr = temp;
+      temp->sl = me;
       return temp;
     }
 
@@ -317,7 +352,7 @@ std::shared_ptr<MetaZone> MetaZone::getSiblingRight()
       ZoneImpl::create(turtle);
     }
 
-   std::shared_ptr<MetaZone> temp_par = turtle->getSiblingRight(); // Get my parent's right sibling : it MUST have a right sibling
+   std::shared_ptr<MetaZone> temp_par = turtle->getSiblingRight(turtle); // Get my parent's right sibling : it MUST have a right sibling
    std::shared_ptr<MetaZone> temp = temp_par->children.get(ZoneDesc(0, desc.y, desc.d)); // Lookup cousin
 
    if (nullptr == temp.get()) // If my cousin doesn't exist, create them
@@ -327,6 +362,8 @@ std::shared_ptr<MetaZone> MetaZone::getSiblingRight()
       temp_par->children.add(temp->desc, temp);
     }
 
+   sr = temp;
+   temp->sl = me;
    return temp;
  }
 
@@ -389,13 +426,14 @@ void MetaZone::normalUpdate()
    solve->down->push(to); // Add the final step
 
 #ifdef DEBUG_PATHFINDING
+if (desc.d >= DEPTH) {
 std::cout << "At (" << desc.x << ", " << desc.y << ", " << desc.d << ") :" << std::endl;
 std::cout << "\tExits : top " << top_c << ", bottom " << bottom_c << ", left " << left_c << ", right " << right_c << std::endl;
 std::cout << "\tPath length " << solve->down->sptr  << " from " << decode[from] << " to " << decode[to] << std::endl;
 std::cout << "\tSolving (" << sx << ", " << sy << ") -> (" << fx << ", " << fy << ") : " << solve->down->sptr << std::endl;
 std::cout << "Path : ";
 for (int i = 0; i < solve->down->sptr; ++i) std::cout << decode[solve->down->seek(i + 1)];
-std::cout << std::endl;
+std::cout << std::endl; }
 #endif /* DEBUG_PATHFINDING */
 
    solve->equal = solve->down->sptr;
@@ -430,7 +468,8 @@ void MetaZone::fullPath()
          break;
        }
 #ifdef DEBUG_PATHFINDING
-std::cout << "\tFinal path length for (" << desc.x << ", " << desc.y << ", " << desc.d << ") : " << solve->equal << std::endl;
+if (desc.d >= DEPTH) {
+std::cout << "\tFinal path length for (" << desc.x << ", " << desc.y << ", " << desc.d << ") : " << solve->equal << std::endl; }
 #endif /* DEBUG_PATHFINDING */
     }
    else // Parent exists and we are following a path.
@@ -470,6 +509,7 @@ void MetaZone::updateDirection()
          --solve->equal;
 
 #ifdef DEBUG_PATHFINDING
+if (desc.d >= DEPTH) {
 std::cout << "At (" << desc.x << ", " << desc.y << ", " << desc.d << ") :" << std::endl;
 std::cout << "\tExits : top " << top_c << ", bottom " << bottom_c << ", left " << left_c << ", right " << right_c << std::endl;
 std::cout << "\tFirst path length " << solve->equal << std::endl;
@@ -480,7 +520,7 @@ std::cout << std::endl;
 std::cout << "\tSolving Right (0, 0) -> (" << TOP << ", " << right_c << ") : " << solve->right->sptr << std::endl;
 std::cout << "Right : ";
 for (int i = 0; i < solve->right->sptr; ++i) std::cout << decode[solve->right->seek(i + 1)];
-std::cout << std::endl;
+std::cout << std::endl; }
 #endif /* DEBUG_PATHFINDING */
 
          if (-1 == solve->equal) // Do we have to compute the full path anyway?
@@ -513,6 +553,7 @@ std::cout << std::endl;
       fullPath();
     }
 #ifdef DEBUG_PATHFINDING
-std::cout << "Move " << solve->location << " for (" << desc.x << ", " << desc.y << ", " << desc.d << ") : " << decode[lastDirection()] << std::endl;
+if (desc.d >= DEPTH) {
+std::cout << "Move " << solve->location << " for (" << desc.x << ", " << desc.y << ", " << desc.d << ") : " << decode[lastDirection()] << std::endl; }
 #endif /* DEBUG_PATHFINDING */
  }
