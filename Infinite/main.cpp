@@ -81,7 +81,6 @@ void solve(const ZoneImpl& zone, std::unique_ptr<QuatroStack>& path, int sx, int
  // 2 : We weren't at the far side of the zone when leaving.
  // 3 : The exit of the old zone wasn't the entrance of the new zone.
  // 4 : The side we went through wasn't open.
-void pathError(int level) __attribute__((noinline)); // GCC, why are you so stupid?
 void pathError(int level)
  {
    std::cerr << "Error in pathfinding " << level << "." << std::endl;
@@ -92,7 +91,7 @@ class MazeSolver : public olc::PixelGameEngine
 public:
    MazeSolver() : cur_zone(std::make_shared<MetaZone>(ZoneDesc(0, 0, 0), std::make_shared<MetaZone>(ZoneDesc(0, 0, 1))))
     {
-      sAppName = "MazeSolver Alpha 2";
+      sAppName = "MazeSolver Infinite Beta 1";
     }
 
    bool OnUserCreate() override
