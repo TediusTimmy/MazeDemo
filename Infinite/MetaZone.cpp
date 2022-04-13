@@ -446,12 +446,12 @@ void MetaZone::updateDirection()
     {
       if (desc.d >= directions.size())
        {
-         directions.resize(desc.d + 1);
+         directions.resize(desc.d + 1, -1);
        }
       solve = std::make_shared<Solver>();
       solve->useRight = false;
 
-      if (nullptr == turtle.get()) // I don't have a parent, so I am the top-left
+      if (-1 == directions[desc.d]) // I don't have a previous direction, so I am the top-left
        {
          // I'm sorry: I didn't realize I did this until the last minute.
          ::solve(*impl, solve->down, 0, 0, bottom_c, TOP);
