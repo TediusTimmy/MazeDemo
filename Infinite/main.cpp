@@ -75,23 +75,12 @@ std::shared_ptr<Zone> convert(const ZoneImpl& from)
    return ret;
  }
 
-void solve(const ZoneImpl& zone, std::unique_ptr<QuatroStack>& path, int sx, int sy, int fx, int fy);
-
- // 1 : We weren't at the zone's designated exit when leaving.
- // 2 : We weren't at the far side of the zone when leaving.
- // 3 : The exit of the old zone wasn't the entrance of the new zone.
- // 4 : The side we went through wasn't open.
-void pathError(int level)
- {
-   std::cerr << "Error in pathfinding " << level << "." << std::endl;
- }
-
 class MazeSolver : public olc::PixelGameEngine
  {
 public:
-   MazeSolver() : cur_zone(std::make_shared<MetaZone>(ZoneDesc(0, 0, 0), std::make_shared<MetaZone>(ZoneDesc(0, 0, 1))))
+   MazeSolver() : cur_zone(std::make_shared<MetaZone>(ZoneDesc(0, 0, 0)))
     {
-      sAppName = "MazeSolver Infinite Beta 1";
+      sAppName = "MazeSolver Infinite Beta 2";
     }
 
    bool OnUserCreate() override
@@ -100,17 +89,16 @@ public:
       pos_y = 1;
       scr_x = 1;
       scr_y = 1;
-      pos_p = 0U;
 
       cr = 255;
       cg = 0;
       cb = 0;
       cm = 0;
 
-      ZoneImpl::create(cur_zone->turtle);
+      tick = true;
+
       ZoneImpl::create(cur_zone);
       cur_zone->realization = convert(*cur_zone->impl);
-      cur_zone->turtle->children.add(cur_zone->desc, cur_zone);
 
       return true;
     }
@@ -181,149 +169,56 @@ public:
 #endif
 // SOLVER
 #if 1
-      if (pos_p == path.size()) // Do I need to solve for a new path?
+      if (true == tick) // Do I need a new direction?
        {
-         int sx = 0, sy = 0, fx = 0, fy = 0, prev = -1;
-
-         // Find starting point
-         if (0U == path.size()) // First path find
-          {
-            sx = 0; // Path finding occurs using passages, not pixels
-            sy = 0;
-          }
-         else // Any time else
-          {
-            prev = cur_zone->turtle->lastDirection();
-            switch (prev)
-             {
-            case 0: // We went left
-               sx = TOP;
-               sy = cur_zone->left_c;
-               if (static_cast<uint32_t>(pos_y) != (2 * cur_zone->left_c + 1)) pathError(1);
-               if (0 != pos_x) pathError(2);
-               if (false == cur_zone->isOpenLeft()) pathError(4);
-               MetaZone::cacheMeOut(cur_zone); // Remove some poor behavior seen in tests.
-               cur_zone = cur_zone->getSiblingLeft();
-               if (static_cast<uint32_t>(sy) != cur_zone->right_c) pathError(3);
-               scr_x += MAX2;
-               break;
-            case 1: // We went right
-               sx = 0;
-               sy = cur_zone->right_c;
-               if (static_cast<uint32_t>(pos_y) != (2 * cur_zone->right_c + 1)) pathError(1);
-               if ((MAX2 - 1) != pos_x) pathError(2);
-               MetaZone::cacheMeOut(cur_zone); // Remove some poor behavior seen in tests.
-               cur_zone = cur_zone->getSiblingRight();
-               if (static_cast<uint32_t>(sy) != cur_zone->left_c) pathError(3);
-               if (false == cur_zone->isOpenLeft()) pathError(4);
-               scr_x -= MAX2;
-               break;
-            case 2: // We went up
-               sx = cur_zone->top_c;
-               sy = TOP;
-               if (static_cast<uint32_t>(pos_x) != (2 * cur_zone->top_c + 1)) pathError(1);
-               if (0 != pos_y) pathError(2);
-               MetaZone::cacheMeOut(cur_zone); // Remove some poor behavior seen in tests.
-               if (false == cur_zone->isOpenUp()) pathError(4);
-               cur_zone = cur_zone->getSiblingUp();
-               if (static_cast<uint32_t>(sx) != cur_zone->bottom_c) pathError(3);
-               scr_y += MAX2;
-               break;
-            case 3: // We went down
-               sx = cur_zone->bottom_c;
-               sy = 0;
-               if (static_cast<uint32_t>(pos_x) != (2 * cur_zone->bottom_c + 1)) pathError(1);
-               if ((MAX2 - 1) != pos_y) pathError(2);
-               MetaZone::cacheMeOut(cur_zone); // Remove some poor behavior seen in tests.
-               cur_zone = cur_zone->getSiblingDown();
-               if (static_cast<uint32_t>(sx) != cur_zone->top_c) pathError(3);
-               if (false == cur_zone->isOpenUp()) pathError(4);
-               scr_y -= MAX2;
-               break;
-             }
-          }
-
-         // Find ending point
-         cur_zone->turtle->updateDirection();
-         switch (cur_zone->turtle->lastDirection())
-          {
-         case 0: // We go left
-            fx = 0;
-            fy = cur_zone->left_c;
-            break;
-         case 1: // We go right
-            fx = TOP;
-            fy = cur_zone->right_c;
-            break;
-         case 2: // We go up
-            fx = cur_zone->top_c;
-            fy = 0;
-            break;
-         case 3: // We go down
-            fx = cur_zone->bottom_c;
-            fy = TOP;
-            break;
-          }
-
-         // Build solution path
-         std::unique_ptr<QuatroStack> solution;
-         solve(*cur_zone->impl, solution, sx, sy, fx, fy);
-
-         path.reserve(2 * (solution->sptr + 1));
-         path.resize(0U);
-         sx = 2 * sx + 1;
-         sy = 2 * sy + 1;
-         switch (prev) // If we have a previous zone, add in the transition, if it is in our zone
-          {
-         case 1:
-            path.push_back(std::make_pair(sx - 1, sy));
-            break;
-         case 3:
-            path.push_back(std::make_pair(sx, sy - 1));
-            break;
-          }
-         path.push_back(std::make_pair(sx, sy));
-         for (int i = 0; i < solution->sptr; ++i)
-          {
-            switch(solution->seek(i + 1))
-             {
-            case 0:
-               path.push_back(std::make_pair(sx - 1, sy));
-               path.push_back(std::make_pair(sx - 2, sy));
-               sx = sx - 2;
-               break;
-            case 1:
-               path.push_back(std::make_pair(sx + 1, sy));
-               path.push_back(std::make_pair(sx + 2, sy));
-               sx = sx + 2;
-               break;
-            case 2:
-               path.push_back(std::make_pair(sx, sy - 1));
-               path.push_back(std::make_pair(sx, sy - 2));
-               sy = sy - 2;
-               break;
-            case 3:
-               path.push_back(std::make_pair(sx, sy + 1));
-               path.push_back(std::make_pair(sx, sy + 2));
-               sy = sy + 2;
-               break;
-             }
-          }
-         switch (cur_zone->turtle->lastDirection()) // If we have a next zone, but the transition is in our zone, fill it
-          {
-         case 0:
-            path.push_back(std::make_pair(sx - 1, sy));
-            break;
-         case 2:
-            path.push_back(std::make_pair(sx, sy - 1));
-            break;
-          }
-         pos_p = 0U;
+         cur_zone->updateDirection();
        }
 
-      pos_x = path[pos_p].first;
-      pos_y = path[pos_p].second;
-      ++pos_p;
+      switch (cur_zone->lastDirection())
+       {
+      case 0: // We go left
+         --pos_x;
+         if (pos_x < 0)
+          {
+            pos_x += MAX2;
+            scr_x += MAX2;
+            MetaZone::cacheMeOut(cur_zone); // Remove some poor behavior seen in tests.
+            cur_zone = cur_zone->getSiblingLeft();
+          }
+         break;
+      case 1: // We go right
+         ++pos_x;
+         if (pos_x >= MAX2)
+          {
+            pos_x -= MAX2;
+            scr_x -= MAX2;
+            MetaZone::cacheMeOut(cur_zone); // Remove some poor behavior seen in tests.
+            cur_zone = cur_zone->getSiblingRight();
+          }
+         break;
+      case 2: // We go up
+         --pos_y;
+         if (pos_y < 0)
+          {
+            pos_y += MAX2;
+            scr_y += MAX2;
+            MetaZone::cacheMeOut(cur_zone); // Remove some poor behavior seen in tests.
+            cur_zone = cur_zone->getSiblingUp();
+          }
+         break;
+      case 3: // We go down
+         ++pos_y;
+         if (pos_y >= MAX2)
+          {
+            pos_y -= MAX2;
+            scr_y -= MAX2;
+            MetaZone::cacheMeOut(cur_zone); // Remove some poor behavior seen in tests.
+            cur_zone = cur_zone->getSiblingDown();
+          }
+         break;
+       }
+
+      tick = !tick;
 
       switch (cm) // Color the current location to show progress
        {
@@ -429,8 +324,7 @@ public:
 private:
    std::shared_ptr<MetaZone> cur_zone;
    int pos_x, pos_y, scr_x, scr_y;
-   std::vector<std::pair<int, int> > path;
-   size_t pos_p;
+   bool tick;
    int cr, cg, cb, cm;
  };
 
