@@ -275,11 +275,7 @@ public:
        }
       if (nullptr == cur_zone->realization.get())
          cur_zone->realization = convert(*cur_zone->impl);
-      if (olc::nDefaultPixel == cur_zone->realization->image[pos_y][pos_x].n)
-       {
-         std::cerr << "Error in path finding." << std::endl;
-         return false;
-       }
+      if (olc::nDefaultPixel == cur_zone->realization->image[pos_y][pos_x].n) pathError(5);
       cur_zone->realization->image[pos_y][pos_x] = olc::Pixel(cr, cg, cb);
 
        {
