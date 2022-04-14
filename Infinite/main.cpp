@@ -101,6 +101,9 @@ public:
       cur_zone->realization = convert(*cur_zone->impl);
       cur_zone->realization->image[pos_y][pos_x] = olc::Pixel(cr, cg, cb);
 
+      theSprite = std::make_unique<olc::Sprite>(SCREEN_X, SCREEN_Y);
+      theDecal = std::make_unique<olc::Decal>(theSprite.get());
+
       return true;
     }
 
@@ -312,18 +315,22 @@ public:
                if (nullptr == temp->realization.get())
                   temp->realization = convert(*temp->impl);
 
-               Draw(x, y, temp->realization->image[ey][ex]);
+               theSprite->SetPixel(x, y, temp->realization->image[ey][ex]);
              }
             else
-               Draw(x, y, olc::Pixel(0, 0, 0));
+               theSprite->SetPixel(x, y, olc::Pixel(0, 0, 0));
           }
        }
 
+      theDecal->Update();
+      DrawDecal({0.0f, 0.0f}, theDecal.get());
       return true;
     }
 
 private:
    std::shared_ptr<MetaZone> cur_zone;
+   std::unique_ptr<olc::Sprite> theSprite;
+   std::unique_ptr<olc::Decal> theDecal;
    int pos_x, pos_y, scr_x, scr_y;
    bool tick;
    int cr, cg, cb, cm;
