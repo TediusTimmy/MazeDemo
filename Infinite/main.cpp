@@ -79,6 +79,7 @@ std::shared_ptr<Zone> convert(const ZoneImpl& from)
  // 2 : We weren't at the far side of the zone when leaving.
  // 3 : The exit of the old zone wasn't the entrance of the new zone.
  // 4 : The side we went through wasn't open.
+ // 5 : We went through a wall pixel.
 void pathError(int level)
  {
    std::cerr << "Error in pathfinding " << level << "." << std::endl;
