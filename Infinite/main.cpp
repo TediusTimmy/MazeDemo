@@ -80,7 +80,7 @@ class MazeSolver : public olc::PixelGameEngine
 public:
    MazeSolver() : cur_zone(std::make_shared<MetaZone>(ZoneDesc(0, 0, 0)))
     {
-      sAppName = "MazeSolver Infinite Beta 2";
+      sAppName = "MazeSolver Infinite Beta 3";
     }
 
    bool OnUserCreate() override
