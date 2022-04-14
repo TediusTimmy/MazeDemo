@@ -248,11 +248,6 @@ public:
          if (0 == cb) cm = 0;
          break;
        }
-      if (olc::nDefaultPixel == cur_zone->realization->image[pos_y][pos_x].n)
-       {
-         std::cerr << "Error in path finding." << std::endl;
-         return false;
-       }
       cur_zone->realization->image[pos_y][pos_x] = olc::Pixel(cr, cg, cb);
 
        {
