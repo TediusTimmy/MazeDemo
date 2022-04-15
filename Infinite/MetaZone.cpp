@@ -30,7 +30,7 @@ SUCH DAMAGE.
 #ifdef DEBUG_PATHFINDING
  #include <iostream>
  const char* decode = "LRUD";
- const int DEPTH = 0;
+ const int DEPTH = 4;
 #endif /* DEBUG_PATHFINDING */
 
 #include "Zone.h"

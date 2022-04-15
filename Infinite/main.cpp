@@ -277,8 +277,6 @@ public:
          if (0 == cb) cm = 0;
          break;
        }
-      if (nullptr == cur_zone->realization.get())
-         cur_zone->realization = convert(*cur_zone->impl);
       if (olc::nDefaultPixel == cur_zone->realization->image[pos_y][pos_x].n) pathError(5);
       cur_zone->realization->image[pos_y][pos_x] = olc::Pixel(cr, cg, cb);
 
@@ -341,8 +339,11 @@ public:
 
             int ix = std::min(MAX2 - ex, SCREEN_X - x);
 
-            if ((nullptr != temp.get()) && (nullptr != temp->realization.get()))
+            if (nullptr != temp.get())
              {
+               if (nullptr == temp->realization.get())
+                  temp->realization = convert(*temp->impl);
+
                std::memcpy(theSprite->GetData() + y * SCREEN_X + x, temp->realization->image[ey] + ex, ix * sizeof(olc::Pixel));
              }
             else
