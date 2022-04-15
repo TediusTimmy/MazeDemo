@@ -278,7 +278,7 @@ public:
 // DRAW SCREEN
       for (int y = 0; y < SCREEN_Y; ++y)
        {
-         for (int x = 0; x < SCREEN_X; ++x)
+         for (int x = 0; x < SCREEN_X;)
           {
             int ex = scr_x - SCREEN_X / 2 + x;
             int ey = scr_y - SCREEN_Y / 2 + y;
@@ -310,15 +310,22 @@ public:
                ey -= MAX2;
              }
 
+            int ix = std::min(MAX2 - ex, SCREEN_X - x);
+
             if (nullptr != temp.get())
              {
                if (nullptr == temp->realization.get())
                   temp->realization = convert(*temp->impl);
 
-               theSprite->SetPixel(x, y, temp->realization->image[ey][ex]);
+               std::memcpy(theSprite->GetData() + y * SCREEN_X + x, temp->realization->image[ey] + ex, ix * sizeof(olc::Pixel));
              }
             else
-               theSprite->SetPixel(x, y, olc::Pixel(0, 0, 0));
+             {
+               for (int dx = 0; dx < ix; ++dx)
+                  theSprite->SetPixel(x + dx, y, olc::Pixel(0, 0, 0));
+             }
+
+            x += ix;
           }
        }
 
