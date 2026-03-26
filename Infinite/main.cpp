@@ -40,8 +40,8 @@ SUCH DAMAGE.
 // the size of the least-recently-used cache, cacheMax, below.
 const int SCREEN_X = 320;
 const int SCREEN_Y = 240;
-const int SCALE_X = 2;
-const int SCALE_Y = 2;
+const int SCALE_X = 4;
+const int SCALE_Y = 4;
 const int PAD = 10;
 
 const int MAX2 = MAX * 2;
@@ -107,72 +107,8 @@ public:
       return true;
     }
 
-   bool OnUserUpdate(float /*fElapsedTime*/) override
+   void OneTick()
     {
-// MANUAL NAVIGATION
-#if 0
-      if (GetKey(olc::Key::W).bHeld) --pos_y;
-      if (GetKey(olc::Key::S).bHeld) ++pos_y;
-      if (GetKey(olc::Key::A).bHeld) --pos_x;
-      if (GetKey(olc::Key::D).bHeld) ++pos_x;
-
-      if (pos_x < 0)
-       {
-         pos_x += MAX2;
-         std::shared_ptr<MetaZone> temp = cur_zone->getSiblingLeft();
-         if (nullptr != temp.get())
-          {
-            cur_zone = temp;
-          }
-         else
-          {
-            pos_x = 0;
-          }
-       }
-      if (pos_x >= MAX2)
-       {
-         pos_x -= MAX2;
-         std::shared_ptr<MetaZone> temp = cur_zone->getSiblingRight();
-         if (nullptr != temp.get())
-          {
-            cur_zone = temp;
-          }
-         else
-          {
-            pos_x = MAX2 - 1;
-          }
-       }
-      if (pos_y < 0)
-       {
-         pos_y += MAX2;
-         std::shared_ptr<MetaZone> temp = cur_zone->getSiblingUp();
-         if (nullptr != temp.get())
-          {
-            cur_zone = temp;
-          }
-         else
-          {
-            pos_y = 0;
-          }
-       }
-      if (pos_y >= MAX2)
-       {
-         pos_y -= MAX2;
-         std::shared_ptr<MetaZone> temp = cur_zone->getSiblingDown();
-         if (nullptr != temp.get())
-          {
-            cur_zone = temp;
-          }
-         else
-          {
-            pos_y = MAX2 - 1;
-          }
-       }
-      scr_x = pos_x;
-      scr_y = pos_y;
-#endif
-// SOLVER
-#if 1
       if (true == tick) // Do I need a new direction?
        {
          cur_zone->updateDirection();
@@ -251,6 +187,8 @@ public:
          if (0 == cb) cm = 0;
          break;
        }
+      if (nullptr == cur_zone->realization.get())
+         cur_zone->realization = convert(*cur_zone->impl);
       cur_zone->realization->image[pos_y][pos_x] = olc::Pixel(cr, cg, cb);
 
        {
@@ -272,6 +210,79 @@ public:
           {
             --scr_y;
           }
+       }
+    }
+
+   bool OnUserUpdate(float /*fElapsedTime*/) override
+    {
+      std::chrono::system_clock::time_point last = std::chrono::system_clock::now();
+// MANUAL NAVIGATION
+#if 0
+      if (GetKey(olc::Key::W).bHeld) --pos_y;
+      if (GetKey(olc::Key::S).bHeld) ++pos_y;
+      if (GetKey(olc::Key::A).bHeld) --pos_x;
+      if (GetKey(olc::Key::D).bHeld) ++pos_x;
+
+      if (pos_x < 0)
+       {
+         pos_x += MAX2;
+         std::shared_ptr<MetaZone> temp = cur_zone->getSiblingLeft();
+         if (nullptr != temp.get())
+          {
+            cur_zone = temp;
+          }
+         else
+          {
+            pos_x = 0;
+          }
+       }
+      if (pos_x >= MAX2)
+       {
+         pos_x -= MAX2;
+         std::shared_ptr<MetaZone> temp = cur_zone->getSiblingRight();
+         if (nullptr != temp.get())
+          {
+            cur_zone = temp;
+          }
+         else
+          {
+            pos_x = MAX2 - 1;
+          }
+       }
+      if (pos_y < 0)
+       {
+         pos_y += MAX2;
+         std::shared_ptr<MetaZone> temp = cur_zone->getSiblingUp();
+         if (nullptr != temp.get())
+          {
+            cur_zone = temp;
+          }
+         else
+          {
+            pos_y = 0;
+          }
+       }
+      if (pos_y >= MAX2)
+       {
+         pos_y -= MAX2;
+         std::shared_ptr<MetaZone> temp = cur_zone->getSiblingDown();
+         if (nullptr != temp.get())
+          {
+            cur_zone = temp;
+          }
+         else
+          {
+            pos_y = MAX2 - 1;
+          }
+       }
+      scr_x = pos_x;
+      scr_y = pos_y;
+#endif
+// SOLVER
+#if 1
+      for (int i = 0; i < 200; ++i)
+       {
+         OneTick();
        }
 #endif
 
@@ -331,6 +342,10 @@ public:
 
       theDecal->Update();
       DrawDecal({0.0f, 0.0f}, theDecal.get());
+
+      last += std::chrono::microseconds(16667);
+      std::this_thread::sleep_until(last);
+
       return true;
     }
 

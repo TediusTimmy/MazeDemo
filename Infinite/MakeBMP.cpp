@@ -30,9 +30,9 @@ SUCH DAMAGE.
 #include <fstream>
 #include <iostream>
 
-#include "bmpheader.h"
-
 #include "Zone.h"
+
+#include "bmpheader.h"
 
 void ZoneImpl::UglyPrint() const
  {
